@@ -1,0 +1,52 @@
+{
+  "name": "@app/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "predev": "pnpm run typegen",
+    "dev": "next dev -p 3000",
+    "prebuild": "pnpm run typegen",
+    "build": "NEXT_PUBLIC_SANITY_PROJECT_ID=\"${NEXT_PUBLIC_SANITY_PROJECT_ID:-placeholder}\" NEXT_PUBLIC_SANITY_DATASET=\"${NEXT_PUBLIC_SANITY_DATASET:-placeholder}\" SANITY_API_READ_TOKEN=\"${SANITY_API_READ_TOKEN:-build-placeholder}\" next build && opennextjs-cloudflare build --skipBuild --skipWranglerConfigCheck && opennextjs-cloudflare populateCache local",
+    "start": "next start -p 3000",
+    "preview": "opennextjs-cloudflare preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "presetup": "echo 'about to setup env variables, follow the guide here: https://github.com/vercel/next.js/tree/canary/examples/cms-sanity#using-the-sanity-cli'",
+    "setup": "npx sanity@latest init --env .env.local",
+    "postsetup": "echo 'create the read token by following the rest of the guide: https://github.com/vercel/next.js/tree/canary/examples/cms-sanity#creating-a-read-token'",
+    "typegen": "NEXT_PUBLIC_SANITY_PROJECT_ID=\"${NEXT_PUBLIC_SANITY_PROJECT_ID:-placeholder}\" NEXT_PUBLIC_SANITY_DATASET=\"${NEXT_PUBLIC_SANITY_DATASET:-placeholder}\" sanity schema extract --force && sanity typegen generate"
+  },
+  "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.11",
+    "@sanity/assist": "^6.2.5",
+    "@sanity/client": "^8.9.0",
+    "@sanity/icons": "^3.4.0",
+    "@sanity/image-url": "^1.0.2",
+    "@sanity/preview-url-secret": "^4.1.5",
+    "@sanity/vision": "^6.19.0",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@tailwindcss/typography": "^0.5.16",
+    "date-fns": "^4.1.0",
+    "next": "16.3.8",
+    "next-sanity": "^13.3.4",
+    "postcss": "^8.4.47",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "sanity": "^6.19.0",
+    "sanity-plugin-asset-source-unsplash": "^7.0.29",
+    "server-only": "^0.0.1",
+    "styled-components": "^6.1.13",
+    "tailwindcss": "^4.1.0"
+  },
+  "devDependencies": {
+    "@app/eslint-config": "workspace:*",
+    "@app/tsconfig": "workspace:*",
+    "@types/node": "^22.9.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9.27.0",
+    "eslint-config-next": "16.3.8",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.151.0"
+  }
+}

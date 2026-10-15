@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* tailwind.config.ts, in Tailwind 4's CSS-first form: Inter from next/font
+   as the sans family (hover-only-when-supported is the v4 default). */
+@theme {
+  --font-sans: var(--font-inter);
+}
+
+/* Tailwind 3's default border colour, which the footer's `border-t` relied on
+   (v4 defaults to currentColor). */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
