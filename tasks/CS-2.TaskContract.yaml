@@ -1,0 +1,16 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+spec:
+  goal: The upstream Blog with Sanity CMS runs on Cloudflare Workers + Static Assets with green checks and the Studio out of the Worker bundle
+  affects:
+    - apps/web
+    - tests/web
+    - pnpm-lock.yaml
+    - package.json
+    - turbo.json
+  doneWhen:
+    - pnpm typecheck, lint, test and build are green in Checks without a Sanity project
+    - wrangler dev serves the Studio shell and its chunks, a 401 from the draft-mode route without a secret, and a 404
+    - the Worker bundle holds no Studio code
+  gates:
+    - checks

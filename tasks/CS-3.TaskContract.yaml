@@ -1,0 +1,15 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+spec:
+  goal: A reader can run, test, preview and deploy the port against their own Sanity project from the README; the as-built status is complete
+  affects:
+    - README.md
+    - specs/epics/cms-sanity/IMPLEMENTATION-STATUS.md
+    - specs/epics/cms-sanity/README.md
+    - specs/epics/cms-sanity/implementation-plan.md
+    - specs/epics/cms-sanity/epic.yaml
+    - specs/epics/README.md
+  doneWhen:
+    - README quick start is verified from a fresh clone
+    - IMPLEMENTATION-STATUS lists every PR and departure
+  gates: []
