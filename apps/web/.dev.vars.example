@@ -1,0 +1,7 @@
+# Local Worker secrets for `wrangler dev` / `opennextjs-cloudflare preview`.
+# Copy to .dev.vars (git-ignored). In stage/prod this is a Worker secret, set
+# once per environment with
+#   wrangler secret put SANITY_API_READ_TOKEN --name cms-sanity-web-<env>
+# (README → Deploying); the deploy lane does not set it. The project id and
+# dataset are not here: they are inlined at build time (see .env.example).
+SANITY_API_READ_TOKEN=
