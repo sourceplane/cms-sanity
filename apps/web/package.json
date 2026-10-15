@@ -6,7 +6,7 @@
     "predev": "pnpm run typegen",
     "dev": "next dev -p 3000",
     "prebuild": "pnpm run typegen",
-    "build": "NEXT_PUBLIC_SANITY_PROJECT_ID=\"${NEXT_PUBLIC_SANITY_PROJECT_ID:-placeholder}\" NEXT_PUBLIC_SANITY_DATASET=\"${NEXT_PUBLIC_SANITY_DATASET:-placeholder}\" SANITY_API_READ_TOKEN=\"${SANITY_API_READ_TOKEN:-build-placeholder}\" next build && opennextjs-cloudflare build --skipBuild --skipWranglerConfigCheck && opennextjs-cloudflare populateCache local",
+    "build": "next build && opennextjs-cloudflare build --skipBuild --skipWranglerConfigCheck && opennextjs-cloudflare populateCache local",
     "start": "next start -p 3000",
     "preview": "opennextjs-cloudflare preview",
     "typecheck": "tsc --noEmit",

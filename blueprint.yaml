@@ -1,0 +1,143 @@
+# The cms-sanity card: what the console's Blueprints page renders and the
+# platform's bootstrap door consumes.
+#
+# THIS FILE IS NOT THE BUILD. `spec.bootstrap.blueprint` names the build
+# document — `repo-blueprint.yaml`, whose phases a runner places. This card is
+# what an operator reads and fills in before pressing Build, and
+# `testing/manifest.test.sh` compares every list below to the document that
+# actually does the thing, not to a copy of itself.
+#
+# The division of labour with the registry is strict: the registry (orun-cloud
+# `infra/baselines-registry/baselines.yaml`) owns identity and commerce — id,
+# visibility, tier, the pinned tag. This file owns the build contract. Neither
+# restates the other, which is why there is no `tag` here: this file is
+# fetched AT the tag the registry pins.
+apiVersion: orun.io/v1
+kind: Blueprint
+metadata:
+  name: cms-sanity
+  displayName: Sanity Blog — a Sanity-backed Next.js blog on Cloudflare Workers
+  description: >
+    Vercel's Blog with Sanity CMS as a product of its own: posts, authors and
+    settings read from a Sanity dataset with next-sanity, draft mode and live
+    preview through the Presentation tool, and the Sanity Studio embedded at
+    /studio — built by OpenNext into one Cloudflare Worker with Static Assets,
+    with CI that deploys it to stage and prod on merge, smoke-tested. It goes
+    live before any Sanity project exists, on bundled sample posts, and reads
+    yours once you connect one. One provider, one consent, one landing.
+  tags: [blog, cms, sanity, nextjs, cloudflare]
+spec:
+  source:
+    repo: sourceplane/cms-sanity
+    # No `tag`. The registry pins it; this file is fetched at it.
+
+  # ── What the operator reads first ────────────────────────────────────────
+  overview:
+    lede: >
+      A Sanity-backed blog on Cloudflare alone. It deploys with sample posts
+      and a "connect your Sanity project" notice; give it a project id and it
+      reads your dataset, with the Studio at /studio.
+    architecture:
+      - layer: Edge
+        items: [web]
+      - layer: Content
+        items: [Sanity (your project, connected after the build)]
+      - layer: Delivery
+        items: [GitHub Actions, OpenNext, wrangler]
+    outcome:
+      - Live on stage and prod, in one landing
+      - Sample posts until a Sanity project is connected — never a 500
+      - Every merge redeploys, smoke-tested
+      - Its own CI from the first commit
+
+  requires:
+    # Cloudflare is the only provider connection a bootstrap needs. GitHub
+    # arrives as the App installation plus the repo link, not as a
+    # connection row. Sanity is NOT a provider the platform brokers: the blog
+    # is built without it, and its owner connects a project afterwards
+    # (the product's README, "Connecting Sanity").
+    integrations: [github, cloudflare]
+    apiKeyRole: admin          # secret writes need the admin floor
+
+  # Every input is collected by the console: keys are lowercase (the
+  # platform's reader refuses anything else), every one carries the `pattern`
+  # its value is checked against before Continue, and a value the console
+  # already holds says so with `from`. repo-blueprint.yaml declares the same
+  # names; `repoPrivate`, `orunWorkspace` and `epicSlug` are build inputs with
+  # defaults (or filled from the build's workspace) and are not asked.
+  inputs:
+    - key: reponame
+      label: Repo name
+      pattern: "^[a-z][a-z0-9-]{1,38}$"
+      # The operator picked the repository; its name IS this value.
+      from: repo.name
+    - key: productname
+      label: Blog name
+      pattern: "^[A-Za-z0-9][A-Za-z0-9 .,'&-]{1,48}$"
+      help: The name visitors see — the heading and the page titles, until the Settings document in your Sanity dataset names the blog itself.
+      example: Acme Notes
+    - key: productdomain
+      label: Blog domain
+      pattern: "^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$"
+      help: The domain the blog will answer on. It does not need to exist — the blog goes live on workers.dev first.
+      example: acme.dev
+    - key: githuborg
+      label: GitHub organisation
+      pattern: "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      help: The GitHub org or user the blog's repository is created under.
+      # DERIVED FROM THE CHOSEN REPOSITORY: its owner IS this value. Declared
+      # because repo-blueprint.yaml requires it — a build may declare more
+      # inputs than this card, but not require one nobody supplies.
+      from: repo.owner
+    - key: subdomain
+      label: workers.dev subdomain
+      pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+      help: The workers.dev subdomain of the Cloudflare account the blog deploys into.
+      example: acme
+
+  # ── PREVIEW ONLY. repo-blueprint.yaml's `orun.integrations/reconcile@v1`
+  # hooks mint these, brokered, during 01-product. ──────────────────────────
+  # Transcribed from those hooks' own `keys:` and `template:` values, so
+  # testing/manifest.test.sh compares this list to the document that mints
+  # them. The console renders them read-only: no credential is ever typed,
+  # shown or stored. Keys that already exist are kept. The Sanity project id,
+  # dataset and read token are not here: no platform connection can mint
+  # them, the blog is built and deployed without them, and its owner adds
+  # them afterwards.
+  secrets:
+    - key: CLOUDFLARE_API_TOKEN
+      provider: cloudflare
+      template: workers-deploy
+      why: Deploys the blog's Worker and its static assets
+    - key: CLOUDFLARE_ACCOUNT_ID
+      provider: cloudflare
+      template: account-id
+      why: Connection fact, not a secret
+      fact: true
+
+  # ── PREVIEW ONLY. repo-blueprint.yaml's run-level `hooks.preInstantiate`
+  # opens these — the epic, every milestone in this order, every task — before
+  # the first phase places. Idempotent by identity, so a re-run finds what it
+  # made before.
+  programme:
+    epicSlug: cms-sanity-baselining      # = repo-blueprint.yaml's `epicSlug` default
+    epicName: "Sanity blog baselining — {productname}"
+    milestones:
+      # The whole product is one landing (01-product): the repository, its
+      # CI, the blog and its tests are one pull request and one convergence.
+      - name: 01-product
+      - name: 02-docs
+
+  bootstrap:
+    # THE BUILD DOCUMENT. There is no umbrella workflow and no agent brief:
+    # every phase is declared in it and orun runs it.
+    blueprint: repo-blueprint.yaml
+    # Summed from the phases' expectedMinutes (01-product 12, 02-docs 2). An
+    # estimate until a bootstrap measures it.
+    expectedMinutes: 14
+    tokenChannel: ORUN_TOKEN_FILE   # how a runner hands over its refreshed token
+  # The blog's URL per environment, as the console links it.
+  verify:
+    urls:
+      - "https://{reponame}-web-{env}.{subdomain}.workers.dev"
+    envs: [stage, prod]

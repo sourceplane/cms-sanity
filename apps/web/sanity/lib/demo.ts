@@ -2,7 +2,10 @@
  * Demo data used as placeholders and initial values for the blog
  */
 
-export const title = "Blog.";
+import { SITE_NAME } from "@/app/site";
+
+// The blog's name until its Settings document gives one (app/site.ts).
+export const title = SITE_NAME;
 
 export const description = [
   {

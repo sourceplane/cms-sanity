@@ -3,23 +3,31 @@
  * Importing other npm packages here could lead to needlessly increasing the client bundle size, or end up in a server-only function that don't need it.
  */
 
-function assertValue<T>(v: T | undefined, errorMessage: string): T {
-  if (v === undefined) {
-    throw new Error(errorMessage);
-  }
+/**
+ * The Sanity project the blog reads, and whether there is one.
+ *
+ * Both values are public and read at BUILD time: `next build` inlines
+ * `NEXT_PUBLIC_*` into the server and the Studio bundles. A build without a
+ * project id is a blog that is not connected yet, not a broken one: it renders
+ * the bundled sample posts (sanity/lib/sample.ts) under a visible "connect your
+ * Sanity project" notice, and /studio says how to connect instead of opening a
+ * Studio that has nothing to talk to. Upstream throws here instead, which made
+ * every route of a fresh deploy a 500.
+ *
+ * `placeholder` is what earlier builds substituted for a missing id; it counts
+ * as no project. The dataset defaults to `production`, Sanity's own default.
+ */
+const configuredProjectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID?.trim() ?? "";
 
-  return v;
-}
+export const isSanityConfigured =
+  configuredProjectId !== "" && configuredProjectId !== "placeholder";
 
-export const dataset = assertValue(
-  process.env.NEXT_PUBLIC_SANITY_DATASET,
-  "Missing environment variable: NEXT_PUBLIC_SANITY_DATASET",
-);
+// The client and the Studio refuse an empty project id, so an unconnected
+// build still hands them a syntactically valid one; nothing is fetched with it.
+export const projectId = isSanityConfigured ? configuredProjectId : "placeholder";
 
-export const projectId = assertValue(
-  process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  "Missing environment variable: NEXT_PUBLIC_SANITY_PROJECT_ID",
-);
+export const dataset =
+  process.env.NEXT_PUBLIC_SANITY_DATASET?.trim() || "production";
 
 /**
  * see https://www.sanity.io/docs/api-versioning for how versioning works

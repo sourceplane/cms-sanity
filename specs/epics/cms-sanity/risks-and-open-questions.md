@@ -49,6 +49,11 @@ fails on any `sanity.io` URL ran the whole build green. The placeholders
 are the Worker's values only if a deploy build forgets to export the real
 ones — then every blog route answers 500 with Sanity's "Dataset not found".
 
+*CS3:* superseded by the unconnected blog (design §6). Neither module
+throws; the build script substitutes nothing (the `typegen` script still
+does, for the Sanity CLI); a build with no project id — or the old
+`placeholder` — renders the bundled sample posts, and never fetches.
+
 ## CS-E — next-sanity 9 → 13, sanity 3 → 6 (RESOLVED)
 
 The template floats `next-sanity ^9.7` (peer `next ^14 || ^15`) and
@@ -67,12 +72,14 @@ overwrite a committed `schema.json`); TypeGen 6's output format for
 Cloudflare Web Analytics reports Core Web Vitals, which is what Speed
 Insights showed; the dashboard differs. The beacon is opt-in by token.
 
-## CS-G — The read token at module evaluation (ACCEPTED)
+## CS-G — The read token at module evaluation (RESOLVED in CS3)
 
-`sanity/lib/token.ts` throws when `SANITY_API_READ_TOKEN` is missing, at
-import, so a Worker without the secret answers 500 on every blog route and
-on the draft-mode route until `wrangler secret put` has run (locally:
-`.dev.vars`). Upstream behaves the same on Vercel; the README says so.
+`sanity/lib/token.ts` threw when `SANITY_API_READ_TOKEN` was missing, at
+import, so a Worker without the secret answered 500 on every blog route and
+on the draft-mode route until `wrangler secret put` had run. Upstream
+behaves the same on Vercel. A baseline's product is deployed before anyone
+can set it, so CS3 makes it optional: the blog renders without it and the
+draft-mode route answers 401 with the reason.
 
 ## CS-H — Draft-mode cookies inside the Presentation iframe (OPEN)
 
@@ -89,3 +96,41 @@ the Presentation tool once and confirm the preview loads.
 "published"`, which makes an explicit `perspective: "published"` select
 drafts (and the token). Only `generateStaticParams` passed one, and it is
 gone; the line is kept as upstream wrote it.
+
+## CS-J — Sanity is not a provider the platform brokers (RESOLVED in CS3)
+
+A bootstrap cannot create a Sanity project, mint a read token or add a CORS
+origin, and the card must not ask for a secret the platform cannot broker.
+Resolved by deploying unconnected (design §6): sample posts, a notice, a
+connect page, a 401 — and optional secret refs the owner fills later. What
+stays the owner's: the project, the two secrets, a redeploy, the CORS
+origins, the token.
+
+## CS-K — Setting a secret redeploys nothing (ACCEPTED)
+
+`SANITY_PROJECT_ID` and `SANITY_DATASET` are read when `apps/web` BUILDS,
+and `orun plan --changed` plans a component only when its files change. An
+owner who stores them sees the samples until the next deploy of `apps/web`.
+The README and the operating contract say so, and name the trigger: the
+`# orun: redeploy …` line at the end of `apps/web/component.yaml`. Reading
+the project id at request time instead would let a secret take effect
+without a build, but the Studio's bundle inlines it at build regardless.
+
+## CS-L — A connected blog with a wrong project still answers 500 (ACCEPTED)
+
+Once a project id is set, the blog reads Sanity as upstream does: a wrong id,
+a missing dataset or a private dataset without a token is Sanity's error at
+request time, a 500 from Next. Masking it behind the samples would show a
+connected owner content that is not theirs. The operating contract tells
+them to probe `/` after connecting; `02-docs`' record says whether each
+environment shows samples or the project's content.
+
+## CS-M — Not proven live (OPEN)
+
+Everything up to the platform is verified offline (IMPLEMENTATION-STATUS):
+the blueprint at three orun versions, the offline bootstrap, the product's
+own push-to-main plan, every step of the stage lane in a staged job tree,
+and the built Worker served and smoke-tested with no Sanity project. Not
+proven: a live bootstrap against a workspace (repository creation, the
+brokered token, a real deploy and the probes), and a connected blog reading
+a real dataset through the Worker (CS-H's Presentation preview included).

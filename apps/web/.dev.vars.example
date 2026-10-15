@@ -2,6 +2,7 @@
 # Copy to .dev.vars (git-ignored). In stage/prod this is a Worker secret, set
 # once per environment with
 #   wrangler secret put SANITY_API_READ_TOKEN --name cms-sanity-web-<env>
-# (README → Deploying); the deploy lane does not set it. The project id and
-# dataset are not here: they are inlined at build time (see .env.example).
+# (README → Connecting Sanity); the deploy lane never sets or clears it. The
+# project id and dataset are not here: they are inlined at build time (see
+# .env.example). Optional: without it draft mode is refused with a 401.
 SANITY_API_READ_TOKEN=

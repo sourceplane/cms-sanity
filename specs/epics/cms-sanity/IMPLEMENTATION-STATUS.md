@@ -8,6 +8,7 @@ the code departed from `design.md` or from the upstream template.
 | CS0 — the spec | ✅ Shipped | [#1](https://github.com/sourceplane/cms-sanity/pull/1) |
 | CS1 — the blog on Workers | ✅ Shipped | [#2](https://github.com/sourceplane/cms-sanity/pull/2) |
 | CS2 — ready to instantiate | ✅ Shipped | [#3](https://github.com/sourceplane/cms-sanity/pull/3) |
+| CS3 — a baseline | 🟡 In review | this PR (CS-4), to be tagged `baseline-v1` |
 
 ## Departures from the upstream template
 
@@ -101,7 +102,97 @@ flag is gone); `setup`/`presetup`/`postsetup` as upstream. Versions in the
 table below; `@sanity/client` is added explicitly because next-sanity 13
 declares it as a peer.
 
-## Verified
+### The unconnected blog (CS3)
+
+Upstream needs a Sanity project before any route renders. A baseline's
+product is deployed before its owner has one, so a build with no project id
+is the **unconnected blog**: `sanity/lib/api.ts` no longer throws (it exports
+`isSanityConfigured`; the dataset defaults to `production`),
+`sanity/lib/token.ts` no longer throws (the token is optional),
+`sanityFetch` answers from `sanity/lib/sample.ts` (three sample posts typed
+by TypeGen's result types) without calling the client, the blog layout
+shows a "connect your Sanity project" notice (`app/(blog)/connect-sanity.tsx`),
+`/studio` renders a connect page (`app/(sanity)/studio/[[...tool]]/connect.tsx`)
+instead of a Studio pointed at no project, and the draft-mode route answers
+401 with the reason when there is no project or no token. The `build` script
+no longer substitutes placeholders (`typegen` still does, for the Sanity
+CLI). A connected blog behaves exactly as before.
+
+### `app/site.ts` — the blog's name (CS3)
+
+`SITE_NAME = "Blog."`, the template's own heading, now lives in one literal
+that the baseline's rename rewrites to a product's name; `sanity/lib/demo.ts`
+`title` reads it, so it is the fallback heading, the page titles and a new
+Settings document's initial title. The sample posts are signed with it.
+
+## Departures from the port (CS3)
+
+| What | Before | After | Why |
+|---|---|---|---|
+| Sanity project id and dataset | `secretEnv` (required) | `optionalSecretEnv` (best-effort) | a fresh product has stored neither; a required ref fails the lane before its first step |
+| `apps/web` smoke | home page carries `bg-white text-black` | that, and `/api/draft-mode/enable` answers 401 | proves the Worker's server code answers, not just a page; holds connected or not |
+| `apps/web/README.md` | upstream's README (Vercel deploy button, `create-next-app --example cms-sanity`) | a short README of the app | upstream's deploy instructions are Vercel's, and the rename would have mangled their `cms-sanity` links |
+| `.env.example`, `.dev.vars.example` | the token as required | the token, project id and dataset optional, and what an unconnected build does | the unconnected blog |
+| `tests/web/tsconfig.json` | `types: ["node"]` | `types: ["node", "next"]` | the new tests reach `sanity/lib/fetch.ts`, whose `next: { revalidate }` fetch option is typed by Next's globals |
+| `ci.yml` gate | `vars.ORUN_CI == 'true'` | skip only while `intent.yaml` names `ws_CHANGE_ME` | a bootstrap cannot set a repository variable |
+| `checks.yml` | push to main and pull requests | pull requests and `workflow_dispatch`; `git diff --exit-code` after `wire:fixture` | the bootstrap's convergence watch takes the newest run on the merge commit from ANY workflow; the committed wrangler config must be what the lane checks for |
+| stack-tectonic | 0.18.2 | 0.19.0 | first-deploy and smoke retries; not 0.20.0 (Turbopack refuses its out-of-tree `node_modules`) |
+| orun lane pin | v2.78.0 | v2.78.4 | cirrus-baseline's pin |
+| `tooling/wire/live.mjs`, `render.mjs` | the port's copies | kv-redis-starter's (`--fixture … --fixture-envs dev`) | the shared renderer's fix; this blog renders nothing (its `wrangler.jsonc` binds only `ASSETS`) |
+| `intent.yaml` | terraform `parameterDefaults`; docs pages under `specs/` | neither; docs pages `ai/context/*` | no terraform component; the pages must exist in a product |
+| discovery roots | `apps/`, `tests/` only | `infra/.gitkeep`, `packages/.gitkeep` too | `orun plan` refuses a missing discovery root |
+| `tasks/CS-1..3` | no `metadata` | `metadata.name` and `title` | `orun work check` (2.79) |
+
+## Verified (CS3)
+
+- `orun new --status` reads the blueprint at v2.58.11 (the bootstrap floor),
+  v2.78.4 (the lane pin) and 2.79.0: `01-product` pending (93 files),
+  `02-docs` hook-only. `orun validate` (here, at all three, and in the placed
+  product) and `orun work check` clean. Both v2.58.11 and v2.78.4 plan the
+  Sanity refs `optional: true`.
+- The repository's own checks: `pnpm install --frozen-lockfile`,
+  `wire:fixture` (and `git diff --exit-code`), typecheck, lint (0 errors, the
+  one upstream warning), test (18 tests in 5 files), build — with no Sanity
+  values set.
+- `testing/{manifest,phases,coverage,rebrand,retouch,bootstrap-defer}.test.sh`
+  green.
+- `testing/leak.test.sh` (at v2.58.11 and 2.79.0): 93 files derived, every one
+  read; nothing of the factory ships, no shipped file names a factory path, no
+  provenance prose; `apps/web/.dev.vars.example` ships (the old
+  `**/.dev.vars.*` ignore entry had dropped it).
+- `testing/placement.test.sh` (at v2.78.4 and 2.79.0; it refuses an orun older
+  than ci.yml's pin), fixture "Sam's Notes & Links" / `acme-inc/acme-cms-sanity`
+  (a slug that ends in this baseline's): orun's Initial commit and two
+  landings; rebrand `--verify` clean, the upstream template's link intact;
+  workspace re-tenanted, `work:` stripped, promotion and dev lanes restored;
+  deployment record rendered; the blog's own `orun plan` for the push that
+  merged 01-product, through ci.yml's `--from-ci github --event-file` path,
+  deploys `web` to stage and prod side by side (no infra, so nothing to order
+  before it) with `verify-app-structure` before `build-app`, the product's
+  Worker name, smoke and Cloudflare secret refs, and the two Sanity refs
+  optional and the product's own; `--resume` changes nothing.
+- `testing/e2e.test.sh`, with no Sanity credentials in the environment: both
+  landings pass the Checks sequence (Turbopack); every run step of the stage
+  lane's pull-request plan (install, `verify-app-structure`, `build-app`,
+  `verify-build-output`, `deploy-dry-run`) passes in a job tree staged as orun
+  stages it, with no build output and its own install (stack-tectonic 0.19.0's
+  job scope); the dry run bundles `acme-cms-sanity-web-stage` (7.9 MB, 1.6 MB
+  gzip); `wrangler dev` serves the staged Worker; the component's own smoke
+  passes verbatim and inside the deploy profile's planned `smoke` step (its
+  workers.dev URL swapped for the local one), and refuses a path that is not
+  the blog; `/` (the product's name in `<h1>` and `<title>`, the notice, the
+  three sample posts), each post (`<post> | <name>`), two 404s, `/studio` and
+  `/studio/structure` (the connect page, `noindex`), the favicon and a
+  `_next/static` chunk, and `/api/draft-mode/enable` (401, "not connected to a
+  Sanity project") are the blog's own.
+- Under `wrangler dev` over a local build with no Sanity values: the same
+  routes, and draft mode's 401.
+- Not verified: a live bootstrap against a workspace (repository creation, the
+  brokered token, a real deploy, the probes), and a CONNECTED blog reading a
+  real dataset through the Worker — risks CS-M, CS-H. The upstream demo
+  dataset answered a public GROQ query (design §6) but is not read.
+
+## Verified (CS1–CS2)
 
 - Local: `pnpm typecheck`, `pnpm lint` (0 errors, 1 upstream warning),
   `pnpm test` (8 tests), `pnpm build` green with no Sanity values set, and

@@ -8,8 +8,10 @@ import { draftMode } from "next/headers";
 
 import AlertBanner from "./alert-banner";
 import { CloudflareWebAnalytics } from "./analytics";
+import ConnectSanityNotice from "./connect-sanity";
 import PortableText from "./portable-text";
 
+import { isSanityConfigured } from "@/sanity/lib/api";
 import * as demo from "@/sanity/lib/demo";
 import { sanityFetch } from "@/sanity/lib/fetch";
 import { settingsQuery } from "@/sanity/lib/queries";
@@ -78,6 +80,7 @@ export default async function RootLayout({
       <body>
         <section className="min-h-screen">
           {isDraftMode && <AlertBanner />}
+          {!isSanityConfigured && <ConnectSanityNotice />}
           <main>{children}</main>
           <footer className="bg-accent-1 border-accent-2 border-t">
             <div className="container mx-auto px-5">
