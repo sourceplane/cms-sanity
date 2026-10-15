@@ -5,9 +5,9 @@ the code departed from `design.md` or from the upstream template.
 
 | Milestone | State | PR |
 |---|---|---|
-| CS0 — the spec | | |
-| CS1 — the blog on Workers | | |
-| CS2 — ready to instantiate | | |
+| CS0 — the spec | ✅ Shipped | [#1](https://github.com/sourceplane/cms-sanity/pull/1) |
+| CS1 — the blog on Workers | ✅ Shipped | [#2](https://github.com/sourceplane/cms-sanity/pull/2) |
+| CS2 — ready to instantiate | ✅ Shipped | [#3](https://github.com/sourceplane/cms-sanity/pull/3) |
 
 ## Departures from the upstream template
 
@@ -102,6 +102,30 @@ table below; `@sanity/client` is added explicitly because next-sanity 13
 declares it as a peer.
 
 ## Verified
+
+- Local: `pnpm typecheck`, `pnpm lint` (0 errors, 1 upstream warning),
+  `pnpm test` (8 tests), `pnpm build` green with no Sanity values set, and
+  green again under a `fetch` guard that fails on any `sanity.io` URL (the
+  build contacts no Sanity API; `next/font` fetches Inter). `wrangler deploy
+  --dry-run`: 7.6 MB uploaded, 1.58 MB gzip, no Studio code in
+  `handler.mjs` (4.8 MB; 21 MB before the client-side split). `wrangler dev`
+  over `.open-next/worker.js` with a throwaway `.dev.vars` token: `/studio`
+  200 (the Studio shell, `robots: noindex`, `referrer: same-origin`,
+  `viewport-fit: cover`), `/studio/structure` 200, `_next/static` chunks
+  200 (the 3.4 MB Studio chunk included), `/favicon.ico` 200, `/nope` 404,
+  `/api/draft-mode/enable` without a secret 401 `Invalid secret` with no
+  network; `/` and `/posts/nope` 500 because the placeholder build has no
+  project (Sanity's API CDN answers 404 `Dataset "placeholder" not found for
+  project ID "placeholder"`). Without `.dev.vars` every blog route and the
+  draft-mode route are 500 `Missing SANITY_API_READ_TOKEN` at module
+  evaluation, as upstream's `token.ts` dictates.
+- CI: `Checks` green on #1 (12 s) and #2 (2 m 12 s); the Orun lanes skip
+  until `ORUN_CI` is set.
+- Not verified: a page rendered from a real Sanity project (none was
+  contacted), the Presentation tool's live preview in a browser
+  (`risks-and-open-questions.md` CS-H), a live deploy (gated until the
+  product is linked to an Orun workspace with a Cloudflare connection), and
+  the Web Analytics beacon with a real token.
 
 ## Versions
 
