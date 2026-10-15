@@ -9,7 +9,7 @@ metadata:
 spec:
   title: "Vercel's Blog with Sanity CMS on Cloudflare Workers"
   summary: "Vercel's cms-sanity example — a blog whose posts, authors and settings live in a Sanity dataset, read with next-sanity and GROQ, with draft mode and live preview through the Presentation tool, Sanity TypeGen, AI Assist and Unsplash presets, and the Sanity Studio embedded at /studio — runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare inside the Cirrus baseline's repository conventions. Sanity stays the SaaS it is; the port moves the three things Workers force: the blog renders on request against Sanity's API CDN instead of ISR on a read-only cache, the Studio mounts client-side so it ships as static assets and not in the Worker, and Speed Insights becomes the Cloudflare Web Analytics beacon."
-  state: backlog
+  state: completed
   milestones:
     - name: "CS0 — the spec"
       exitCriteria:
