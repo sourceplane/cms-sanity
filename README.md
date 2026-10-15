@@ -5,9 +5,10 @@ Vercel's [Blog with Sanity CMS](https://github.com/vercel/next.js/tree/canary/ex
 `next-sanity`, draft mode with live preview through the Presentation tool,
 Sanity TypeGen, AI Assist and Unsplash presets, and the Sanity Studio
 embedded at `/studio` — running on **Cloudflare Workers + Static Assets**
-through [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare),
-inside the repository conventions of the
-[Cirrus baseline](https://github.com/sourceplane/cirrus-baseline).
+through [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare), and
+packaged as an **Orun baseline**: one command takes a new blog from nothing
+to live on stage and prod, in its own repository, under its own name, in
+ONE landing — before its owner has a Sanity project at all.
 
 The template's code is the code and Sanity stays the SaaS it is. What the
 port adds is the Workers build, the monorepo wrapper, a test package and
@@ -15,18 +16,69 @@ the deploy contract; what it changes is what Workers force: the blog
 renders on request against Sanity's API CDN instead of ISR on a read-only
 cache, the Studio mounts client-side so it ships as static assets and not
 inside the Worker, and Speed Insights becomes the Cloudflare Web Analytics
-beacon. See [`specs/epics/cms-sanity`](specs/epics/cms-sanity/README.md)
+beacon. What the baseline adds is everything needed to make a copy of it
+somebody else's — built the way
+[cirrus-baseline](https://github.com/sourceplane/cirrus-baseline) builds its
+product since baseline-v22: one landing, one convergence — and what makes it
+deployable with no Sanity project: an unconnected build renders bundled
+sample posts under a visible "connect your Sanity project" notice instead of
+failing. See [`specs/epics/cms-sanity`](specs/epics/cms-sanity/README.md)
 for the design, the milestones and the as-built status.
 
-## What is here
+## Instantiating a blog
+
+```bash
+git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/cms-sanity
+cd cms-sanity
+orun new --blueprint repo-blueprint.yaml --out ~/blogs/acme-notes --run-hooks --resume \
+  --set reponame=acme-notes --set productname="Acme Notes" --set productdomain=acme.dev \
+  --set githuborg=acme-inc --set subdomain=<workers-dev-subdomain>
+```
+
+Or, once the platform's registry lists it, from the Orun console (Baselines →
+`cms-sanity` → Build). Two phases — `01-product` (the repository, its CI and
+the whole blog in one pull request, deployed to stage and prod by one
+convergence, smoke-tested) and `02-docs` (the live deployment recorded) —
+each landing one pull request in the new repository.
+**[BOOTSTRAP.md](BOOTSTRAP.md)** is the operator guide;
+[docs/phases/](docs/phases/README.md) has a page per phase.
+
+The new repository receives the **blog only** — the app, its tests, its CI,
+its tooling, a README of its own and its operating contract — renamed
+throughout to the blog's name, repository and Cloudflare Worker. None of this
+repository's machinery ships, and nothing that ships names it.
+
+The only provider the bootstrap asks for is Cloudflare. **Sanity is not a
+provider the platform brokers**, so the blog is built without it and its
+owner connects a project afterwards: two optional Orun secrets
+(`SANITY_PROJECT_ID`, `SANITY_DATASET`) and a redeploy, the Worker URLs in
+the project's CORS origins, and — for draft mode only — a Worker secret
+`SANITY_API_READ_TOKEN`. The blog's README, "Connecting Sanity"
+(`.baseline/product/README.md` here), has the steps.
+
+| What makes it a baseline | Where |
+|---|---|
+| The console card (inputs, secrets, programme) | `blueprint.yaml` |
+| The build document (modules, phases, hooks) | `repo-blueprint.yaml` |
+| This tree's identity, and the bootstrap's task contracts | `.baseline/` |
+| The rename engine | `tooling/rebrand/rebrand.mjs` |
+| The bootstrap's helpers (deferrals, redeploy marker, work-tree strip) | `tooling/bootstrap/` |
+| The deployment-record renderer | `hooks/render-deployment-docs.sh` |
+| The blog's README and context pack | `.baseline/product/README.md`, `ai/context/` |
+| The baseline's tests: contract, leak, offline bootstrap, end to end | `testing/`, `.github/workflows/baseline.yml` |
+| Cutting a `baseline-vN` tag | `.github/workflows/tag.yml` |
+
+## What is here (the blog)
 
 | Surface | Where |
 |---|---|
-| Home, `/posts/[slug]`, the draft-mode banner and action | `apps/web/app/(blog)` |
-| The Studio at `/studio` | `apps/web/app/(sanity)`, `apps/web/sanity.config.ts` |
+| Home, `/posts/[slug]`, the draft-mode banner and action, the unconnected notice | `apps/web/app/(blog)` |
+| The Studio at `/studio` (or, unconnected, how to connect) | `apps/web/app/(sanity)`, `apps/web/sanity.config.ts` |
 | Draft mode enable route | `apps/web/app/api/draft-mode/enable/route.ts` |
-| Client, queries, `sanityFetch`, image URLs | `apps/web/sanity/lib` |
+| Client, queries, `sanityFetch`, image URLs, the project configuration | `apps/web/sanity/lib` |
+| The sample posts an unconnected blog renders | `apps/web/sanity/lib/sample.ts` |
 | Schemas, Studio plugins, generated types | `apps/web/sanity/schemas`, `apps/web/sanity/plugins`, `apps/web/sanity.types.ts` |
+| The blog's name (the rename's seam) | `apps/web/app/site.ts` |
 | Workers build and deploy contract | `apps/web/next.config.ts`, `open-next.config.ts`, `wrangler.jsonc`, `component.yaml` |
 | Tests | `tests/web` (vitest) |
 
@@ -38,17 +90,17 @@ pnpm typecheck
 pnpm lint
 pnpm test
 pnpm build            # typegen + next build + opennextjs-cloudflare build → apps/web/.open-next
+pnpm --filter @app/web preview   # wrangler dev over the built Worker: the sample posts, unconnected
 ```
 
-That much needs no Sanity project: the build substitutes placeholder values
-for the project id, dataset and token when they are unset (`Checks` runs
-exactly this). To see content you need a project:
+That much needs no Sanity project (`Checks` runs exactly this). To see your
+own content:
 
 ```bash
 cd apps/web
 cp .env.example .env.local
 pnpm run setup                    # sanity init: picks or creates the project and dataset, writes .env.local
-# then create a Viewer token at manage.sanity.io → API → Add API token and put it in .env.local as SANITY_API_READ_TOKEN
+# a Viewer token from manage.sanity.io → API → Tokens, as SANITY_API_READ_TOKEN in .env.local (draft mode only)
 cd ../..
 pnpm --filter @app/web dev        # http://localhost:3000, the Studio at /studio
 ```
@@ -63,52 +115,32 @@ NEXT_PUBLIC_SANITY_PROJECT_ID=<id> NEXT_PUBLIC_SANITY_DATASET=<dataset> pnpm bui
 pnpm preview                      # wrangler dev over the built Worker
 ```
 
-Variables (`apps/web/.env.example`, `apps/web/.dev.vars.example`):
-
 | Variable | Where it is read | What it does |
 |---|---|---|
-| `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET` | build time (`next build` inlines them into the server bundle and the Studio) | The Sanity project and dataset. The Orun build exports them from the product's secrets; unset, the build uses `placeholder` for both and the Worker has no project to read from. |
-| `SANITY_API_READ_TOKEN` | request time, in the Worker | A Viewer token; draft mode and live preview fetch drafts with it. A Worker secret in stage/prod, `.dev.vars` locally, `.env.local` for `next dev`. Without it every blog route answers 500 (`Missing SANITY_API_READ_TOKEN`), as upstream. |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | build time (`next build` inlines it into the server bundle and the Studio) | The Sanity project. A deployed build takes it from its environment's `SANITY_PROJECT_ID` secret, best-effort. Unset, the blog is unconnected: the sample posts under a notice, a connect page at `/studio`, draft mode refused with 401. |
+| `NEXT_PUBLIC_SANITY_DATASET` | build time | The dataset (`SANITY_DATASET`); `production` when unset. |
+| `SANITY_API_READ_TOKEN` | request time, in the Worker | A Viewer token; draft mode and live preview fetch drafts with it. A Worker secret in stage/prod, `.dev.vars` locally, `.env.local` for `next dev`. Optional: without it the blog renders and draft mode answers 401 with the reason. |
 | `NEXT_PUBLIC_CF_BEACON_TOKEN` | build time | Optional. Cloudflare Web Analytics token (dashboard → Web Analytics → add a site). Unset, no script is rendered. |
-
-Content: open `/studio`, create a post (the home page shows an onboarding
-card until one exists), publish it. The blog reads Sanity's API CDN on every
-request, so a published change shows within its 60 s TTL.
 
 ## How it maps to Vercel
 
 | Vercel | Here |
 |---|---|
 | Next.js hosting (ISR pages, route handler, server action, Studio page) | One Cloudflare Worker (`.open-next/worker.js`) + Static Assets; `/` and `/posts/[slug]` render on every request (`force-dynamic`), `/studio` is a pre-rendered shell from the static-assets cache |
-| Project env vars in the dashboard | Build time: project id and dataset from Orun secrets, inlined by `next build`. Run time: the read token as a Worker secret |
+| Project env vars in the dashboard | Build time: project id and dataset from optional Orun secrets, inlined by `next build`. Run time: the read token as a Worker secret |
+| A missing env var fails every route | An unconnected blog: sample posts, a notice, a connect page — deployable before a Sanity project exists |
 | Time-based ISR (`revalidate: 60`) | Sanity's API CDN, same 60 s TTL; nothing is pre-rendered or revalidated in the Worker |
 | Draft mode / Presentation live preview | Unchanged (`/api/draft-mode/enable`, cookies, `VisualEditing`) |
-| The Studio rendered on the server | Loaded client-side only; 10 MB of static chunks, a 1.6 MB gzip Worker |
+| The Studio rendered on the server | Loaded client-side only; megabytes of static chunks, a small Worker |
 | Vercel Speed Insights | Cloudflare Web Analytics beacon (`app/(blog)/analytics.tsx`) |
-| Deploy on push | Orun deploys `cms-sanity-web-{stage,prod}` on merge to `main` (`apps/web/component.yaml`) |
+| Deploy on push | Orun deploys `<repo>-web-{stage,prod}` on merge to `main` and smoke-tests it (`apps/web/component.yaml`) |
+| "Deploy with Vercel" (clone the template) | `orun new --blueprint repo-blueprint.yaml` — a new repository, branded, deployed |
 
-## Deploying
+## CI
 
-`.github/workflows/checks.yml` runs install, typecheck, lint, test and build
-on every push and pull request, with no Sanity credentials. `ci.yml` is the
-Orun pipeline: set `execution.state.workspace` in `intent.yaml` to this
-product's workspace (`orun cloud link`), connect a Cloudflare account to it,
-and set the `ORUN_CI` repository variable to `true`. A merge to `main` then
-builds the app with that environment's project id and dataset and deploys
-the Worker to `stage`, then `prod`.
-
-Three things are the product's to set once per environment:
-
-```bash
-# Build-time values, read by apps/web/component.yaml's secretEnv at build
-# (each prompts for its value)
-orun secrets set SANITY_PROJECT_ID --env stage    # the project id from manage.sanity.io
-orun secrets set SANITY_DATASET    --env stage    # usually "production"
-
-# The Worker secret (the deploy lane does not set it)
-wrangler secret put SANITY_API_READ_TOKEN --name cms-sanity-web-stage   # a Viewer token
-```
-
-Then, in the Sanity project's settings (manage.sanity.io → API → CORS
-origins), allow the Worker's origin with credentials so the embedded Studio
-can talk to the dataset from `https://cms-sanity-web-prod.<subdomain>.workers.dev/studio`.
+| Workflow | What it runs | Ships to a blog |
+|---|---|---|
+| `checks.yml` | install, wire fixtures (and that the committed config is their render), typecheck, lint, test, build — every PR (not pushes: on main, `ci.yml` must be the only run a commit has, because the bootstrap's convergence watch takes the newest one) | yes |
+| `ci.yml` | the Orun pipeline: `orun plan --changed`, then one job per lane; deploys stage → prod on merge. It plans nothing while `intent.yaml` names the placeholder workspace `ws_CHANGE_ME`, as this repository does | yes |
+| `baseline.yml` | the baseline's own tiers: contract tests, the blueprint read by the pinned orun, the leak gate, the offline bootstrap, the blog built, dry-deployed and served with no Sanity project | no |
+| `tag.yml` | cuts a `baseline-vN` tag (manual) | no |

@@ -12,11 +12,22 @@ spec:
   # Its own lane per environment: the Next.js build is the longest job in the
   # plan, and a shared lane would wait on it.
   lane: isolated
-  # The Sanity project id and dataset are build-time public values: `next
-  # build` inlines them into the server and the Studio bundles. The deploy
-  # build exports them from the product's secrets; the read token is not here
-  # — it is a Worker secret (README → Deploying).
-  secretEnv:
+  # No dependsOn: the blog reads no wiring and binds nothing, so there is no
+  # infra component to deploy before it. A component under infra/ that this
+  # Worker comes to read wiring from goes here, `mode: enforced` with a
+  # `modeRules` entry making it advisory on github-pull-request, so one
+  # convergence applies it first.
+  #
+  # The Sanity project id and dataset: public values `next build` inlines into
+  # the server and the Studio bundles, stored per environment as the product's
+  # secrets SANITY_PROJECT_ID and SANITY_DATASET (README → Connecting Sanity).
+  # BEST-EFFORT references, wire-now-seed-later: a key nobody has stored yet
+  # is skipped when the job resolves its secrets (no env var, no failure), and
+  # a build without a project id is the blog with its sample posts and a
+  # "connect your Sanity project" notice — so a fresh product deploys and
+  # serves before its owner has a Sanity project at all. The read token is
+  # not here: it is read at request time, a Worker secret.
+  optionalSecretEnv:
     NEXT_PUBLIC_SANITY_PROJECT_ID: "secret://cms-sanity/cms-sanity/{{ .environment }}/SANITY_PROJECT_ID"
     NEXT_PUBLIC_SANITY_DATASET: "secret://cms-sanity/cms-sanity/{{ .environment }}/SANITY_DATASET"
   subscribe:
@@ -61,8 +72,14 @@ spec:
     installCommand: pnpm install --frozen-lockfile
     buildCommand: pnpm exec turbo run build --filter=@app/web
 
-    # Smoke: the home page renders and carries the app's marker text.
-    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q 'bg-white text-black'"
+    # Smoke: the home page renders the blog's layout (its <html> classes —
+    # not the blog's name, which is the owner's to change and HTML-escaped
+    # when it carries an `&` or `'`), whether it shows sample posts or the
+    # owner's; and the draft-mode route, which only the Worker's server code
+    # answers, refuses a request without a preview secret (401), with or
+    # without a project and a read token. The page is buffered before grep so
+    # an early match cannot SIGPIPE curl.
+    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q 'bg-white text-black' && test \"$(curl -s -o /dev/null -w '%{http_code}' \"${DEPLOYED_URL}/api/draft-mode/enable\")\" = 401"
   labels:
     team: platform
     layer: delivery

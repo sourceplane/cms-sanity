@@ -1,5 +1,8 @@
 apiVersion: orun.io/v1
 kind: TaskContract
+metadata:
+  name: CS-2
+  title: "The blog on Workers"
 spec:
   goal: The upstream Blog with Sanity CMS runs on Cloudflare Workers + Static Assets with green checks and the Studio out of the Worker bundle
   affects:

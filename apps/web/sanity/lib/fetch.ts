@@ -1,7 +1,10 @@
+import type { ClientReturn } from "@sanity/client";
 import type { ClientPerspective, QueryParams } from "next-sanity";
 import { draftMode } from "next/headers";
 
+import { isSanityConfigured } from "@/sanity/lib/api";
 import { client } from "@/sanity/lib/client";
+import { sampleFetch } from "@/sanity/lib/sample";
 import { token } from "@/sanity/lib/token";
 
 /**
@@ -25,7 +28,12 @@ export async function sanityFetch<const QueryString extends string>({
   params?: QueryParams | Promise<QueryParams>;
   perspective?: Omit<ClientPerspective, "raw">;
   stega?: boolean;
-}) {
+}): Promise<ClientReturn<QueryString>> {
+  // No project to read from yet: the bundled sample posts answer instead
+  // (sanity/lib/sample.ts), so a fresh deploy renders rather than failing.
+  if (!isSanityConfigured) {
+    return sampleFetch(query, await params) as ClientReturn<QueryString>;
+  }
   const perspective =
     _perspective || (await draftMode()).isEnabled
       ? "previewDrafts"

@@ -9,7 +9,7 @@ metadata:
 spec:
   title: "Vercel's Blog with Sanity CMS on Cloudflare Workers"
   summary: "Vercel's cms-sanity example — a blog whose posts, authors and settings live in a Sanity dataset, read with next-sanity and GROQ, with draft mode and live preview through the Presentation tool, Sanity TypeGen, AI Assist and Unsplash presets, and the Sanity Studio embedded at /studio — runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare inside the Cirrus baseline's repository conventions. Sanity stays the SaaS it is; the port moves the three things Workers force: the blog renders on request against Sanity's API CDN instead of ISR on a read-only cache, the Studio mounts client-side so it ships as static assets and not in the Worker, and Speed Insights becomes the Cloudflare Web Analytics beacon."
-  state: completed
+  state: started
   milestones:
     - name: "CS0 — the spec"
       exitCriteria:
@@ -26,3 +26,10 @@ spec:
         - "the README says how to run, test, preview and deploy it, and how the Sanity project, dataset, read token and analytics are configured"
         - "the as-built status records every departure from the upstream template"
       tasks: [CS-3]
+    - name: "CS3 — a baseline"
+      exitCriteria:
+        - "blueprint.yaml (the console card) and repo-blueprint.yaml (the build) take a new blog from nothing to live on stage and prod in ONE landing (01-product), then record it (02-docs)"
+        - "a fresh build with no Sanity project deploys and serves: the bundled sample posts under a visible 'connect your Sanity project' notice, /studio as a connect page, draft mode refused with 401 — never a 500; the owner's project id and dataset are optional secret refs, the read token a Worker secret, and the README says how to set all three"
+        - "a blog built from it carries the blog only, renamed throughout to its own name, repository and Worker through one seam (apps/web/app/site.ts), the upstream template's links left alone, and no shipped file names a factory path"
+        - "Baseline CI is green: contract tests, the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the end-to-end tier — the stage lane's planned steps in a staged job tree with no Sanity credentials, the Worker served by wrangler dev and smoke-tested"
+      tasks: [CS-4]

@@ -1,0 +1,35 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: CS-4
+  title: "A baseline"
+spec:
+  goal: The repository is an Orun baseline — a card and a build document that take a new blog from nothing to live on stage and prod in one landing, branded as its own, deployable before its owner has a Sanity project, with gates that prove it offline
+  affects:
+    - blueprint.yaml
+    - repo-blueprint.yaml
+    - BOOTSTRAP.md
+    - README.md
+    - .baseline/**
+    - tooling/rebrand/**
+    - tooling/bootstrap/**
+    - tooling/wire/**
+    - hooks/**
+    - testing/**
+    - docs/phases/**
+    - ai/context/**
+    - .github/workflows/**
+    - intent.yaml
+    - infra/.gitkeep
+    - packages/.gitkeep
+    - apps/web/**
+    - tests/web/**
+    - specs/**
+    - tasks/**
+  doneWhen:
+    - orun (the bootstrap floor, the lane pin and the current CLI) reads repo-blueprint.yaml, and the card agrees with it
+    - a build with no Sanity project deploys and serves its pages (sample posts, a connect notice), never a 500
+    - the leak gate, the offline bootstrap and the end-to-end tier are green in Baseline CI
+    - the as-built status records the departures and what is not yet proven live
+  gates:
+    - checks
