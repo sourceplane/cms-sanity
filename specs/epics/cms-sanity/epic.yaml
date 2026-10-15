@@ -1,0 +1,28 @@
+# The epic's declaration. metadata.name equals the directory name; metadata.key
+# is the task-key prefix this epic reserves (CS → CS-1, CS-2, …). Owner, target
+# date and health are the platform's — never written here.
+apiVersion: orun.io/v1
+kind: Epic
+metadata:
+  name: cms-sanity
+  key: CS
+spec:
+  title: "Vercel's Blog with Sanity CMS on Cloudflare Workers"
+  summary: "Vercel's cms-sanity example — a blog whose posts, authors and settings live in a Sanity dataset, read with next-sanity and GROQ, with draft mode and live preview through the Presentation tool, Sanity TypeGen, AI Assist and Unsplash presets, and the Sanity Studio embedded at /studio — runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare inside the Cirrus baseline's repository conventions. Sanity stays the SaaS it is; the port moves the three things Workers force: the blog renders on request against Sanity's API CDN instead of ISR on a read-only cache, the Studio mounts client-side so it ships as static assets and not in the Worker, and Speed Insights becomes the Cloudflare Web Analytics beacon."
+  state: backlog
+  milestones:
+    - name: "CS0 — the spec"
+      exitCriteria:
+        - "the doc set and the task contracts are on main"
+      tasks: [CS-1]
+    - name: "CS1 — the blog on Workers"
+      exitCriteria:
+        - "apps/web is the upstream template, built by `next build` + `opennextjs-cloudflare build` with no Sanity project at hand, and the Studio is in the static assets, not the Worker bundle"
+        - "`pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` are green on main (Checks)"
+        - "`wrangler dev` serves /studio (the Studio shell) and its chunks, answers /api/draft-mode/enable without a secret with 401, and an unknown path with 404; / and /posts/[slug] render once a project id, dataset and read token are set"
+      tasks: [CS-2]
+    - name: "CS2 — ready to instantiate"
+      exitCriteria:
+        - "the README says how to run, test, preview and deploy it, and how the Sanity project, dataset, read token and analytics are configured"
+        - "the as-built status records every departure from the upstream template"
+      tasks: [CS-3]
