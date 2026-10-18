@@ -32,9 +32,6 @@ state; nothing was changed out of band, so there is nothing else to undo.
 
 ## Common failures
 
-- **A `WIRING_*` secret is missing at deploy**: an infrastructure lane upstream
-  has not applied for this environment yet. Within one convergence the plan
-  runs it first; on its own, re-run that lane.
 - **The smoke fails right after a first deploy**: a new workers.dev route can
   answer 4xx for a few seconds and the lane retries. A failure that persists
   is a regression in the deployed code.
