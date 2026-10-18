@@ -14,3 +14,8 @@ Built by the turbo pipeline from `apps/web` and deployed with wrangler.
 | Binding  | Kind          | Source              |
 | -------- | ------------- | ------------------- |
 | `ASSETS` | Static assets | `.open-next/assets` |
+
+## Secrets resolved by the lane (names only)
+
+- `NEXT_PUBLIC_SANITY_DATASET` (optional)
+- `NEXT_PUBLIC_SANITY_PROJECT_ID` (optional)
