@@ -58,7 +58,10 @@ opening a Studio with nothing behind it. To make it read your content:
    ```
 
    Without it the Studio's live preview is refused (the draft-mode route
-   answers 401 and says why); everything else works.
+   answers 401 and says why); everything else works. With it, open the
+   Presentation tool once and confirm the preview loads: the draft-mode
+   cookies it relies on inside the Studio's iframe (`SameSite=None;
+   Partitioned`) are tested with a mocked client, not yet in a browser.
 
 Then write at `/studio`. Published changes show on the blog within a minute
 (Sanity's API CDN cache) — no deploy.
