@@ -8,7 +8,8 @@ the code departed from `design.md` or from the upstream template.
 | CS0 — the spec | ✅ Shipped | [#1](https://github.com/sourceplane/cms-sanity/pull/1) |
 | CS1 — the blog on Workers | ✅ Shipped | [#2](https://github.com/sourceplane/cms-sanity/pull/2) |
 | CS2 — ready to instantiate | ✅ Shipped | [#3](https://github.com/sourceplane/cms-sanity/pull/3) |
-| CS3 — a baseline | 🟡 In review | this PR (CS-4), to be tagged `baseline-v1` |
+| CS3 — a baseline | ✅ Shipped | [#4](https://github.com/sourceplane/cms-sanity/pull/4) (CS-4), tagged `baseline-v1` |
+| CS4 — the cirrus standard | ✅ Shipped | CS-5 — on `main` after `baseline-v1`, not yet tagged |
 
 ## Departures from the upstream template
 
@@ -142,6 +143,41 @@ Settings document's initial title. The sample posts are signed with it.
 | `intent.yaml` | terraform `parameterDefaults`; docs pages under `specs/` | neither; docs pages `ai/context/*` | no terraform component; the pages must exist in a product |
 | discovery roots | `apps/`, `tests/` only | `infra/.gitkeep`, `packages/.gitkeep` too | `orun plan` refuses a missing discovery root |
 | `tasks/CS-1..3` | no `metadata` | `metadata.name` and `title` | `orun work check` (2.79) |
+
+## The cirrus standard (CS4)
+
+Nothing about the blog changed. What changed is the baseline around it:
+
+| What | Before | After | Why |
+|---|---|---|---|
+| orun pin | `kiox.yaml` (v2.15.0) + `kiox.lock`, shipped to every blog | gone; orun is pinned where it runs, the `orun-action` `version:` in each workflow | nothing ran the kiox pin, and it disagreed with the lanes (v2.78.4) |
+| `root-kiox`, `root-kiox-lock` modules | in `01-product` | removed (`testing/phases.test.sh`, the rebrand's skip list and `docs/phases/01-product.md` follow) | a blog is placed with 93 − 2 + 6 = 97 files: no kiox, plus the docs below |
+| component docs | none | `apps/web/docs/` and `tests/web/docs/` — `overview.md`, `architecture.md`, `runbook.md` | cirrus-baseline documents every component; the workspace Docs library renders `docs/` beside each `component.yaml` |
+| how the docs stay true | — | `tooling/catalog/gen-component-docs.py` derives them from the manifest, the Worker config, Terraform, migrations and package scripts; Baseline CI runs it with `--check` | a hand-written copy of a manifest drifts silently |
+| context pack | `operations.md`, `deployment.md` | plus `current.md`, `decisions.md`, `open-risks.md` | cirrus-baseline's shape; the three new pages are this repository's own and no module places them (the leak gate still allows exactly two) |
+| the Presentation preview in the READMEs and `design.md` | "Unchanged" (the root README's opening line and mapping table) | unchanged in code, not yet exercised in a browser (risk CS-H); the blog's README asks its owner to open the Presentation tool once after adding the token | CS-H is open: the draft-mode route is tested with a mocked client only |
+| status | CS3 "in review … to be tagged `baseline-v1`" | CS3 shipped and tagged `baseline-v1` | the tag existed; the documents had not caught up |
+
+## Verified (CS4)
+
+- `testing/{manifest,phases,coverage,rebrand,retouch,bootstrap-defer}.test.sh`
+  green; `gen-component-docs.py --check` green (2 components, 6 pages).
+- `testing/leak.test.sh` (v2.58.11): 97 files derived (93 − 2 kiox + 6 docs
+  pages), every one read; ai/context still exactly the two declared pages;
+  no shipped file names a factory path; no provenance prose.
+- `testing/placement.test.sh` (v2.78.4, as `baseline.yml` runs it): 97 files
+  placed, both landings, branded, re-tenanted; the blog's own `orun plan`
+  deploys `web` to stage and prod side by side with the Sanity refs
+  optional; `--resume` changes nothing.
+- `pnpm install --frozen-lockfile`, `wire:fixture` (and `git diff
+  --exit-code`), `typecheck`, `lint` (0 errors, the one upstream warning),
+  `test` (18 tests in 5 files), `build` green, with no Sanity values set.
+- `testing/e2e.test.sh` (v2.78.4) green with no Sanity credentials: both
+  landings under the Checks sequence, every run step of the stage lane in a
+  staged job tree (the dry run bundles 7872 KiB, 1628 KiB gzip), `wrangler
+  dev` over the staged Worker, the component's smoke and every route the
+  blog promises.
+- `orun task check CS-5` complete.
 
 ## Verified (CS3)
 

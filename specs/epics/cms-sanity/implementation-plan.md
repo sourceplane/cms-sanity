@@ -32,7 +32,7 @@ token; `NEXT_PUBLIC_CF_BEACON_TOKEN`), `IMPLEMENTATION-STATUS.md`, epic
 - the README quick start works from a fresh clone
 - the status file lists every PR and departure
 
-## CS3 — a baseline (CS-4)
+## CS3 — a baseline (CS-4) ✅
 
 `blueprint.yaml`, `repo-blueprint.yaml`, `.baseline/` (identity, task
 contracts, the blog's README), `tooling/rebrand`, `tooling/bootstrap`,
@@ -54,9 +54,36 @@ Studio's connect page, draft mode's 401) and best-effort Sanity secret refs
 - the status file records what is proven offline and what only a live
   bootstrap (and a real Sanity project) can prove
 
+## CS4 — the cirrus standard (CS-5) ✅
+
+Bring the baseline to cirrus-baseline's standard, with nothing about the
+blog itself changing.
+
+- **No kiox.** `kiox.yaml`/`kiox.lock` pinned an orun (v2.15.0) that nothing
+  ran: every workflow installs orun itself through `orun-action` with its own
+  `version:`. The files, their two modules and the rebrand's skip entry go.
+- **Component docs.** `tooling/catalog/gen-component-docs.py` writes each
+  component's `docs/overview.md`, `docs/architecture.md` and `docs/runbook.md`
+  from what the component declares, as cirrus-baseline's do; the pages ship
+  with the component. Baseline CI runs it with `--check`.
+- **The context pack.** `ai/context/current.md`, `decisions.md` and
+  `open-risks.md` beside the two pages a blog ships with — this
+  repository's own, so no module places them.
+- **Status that agrees with the tags.** CS3 is shipped and tagged
+  `baseline-v1`; the READMEs no longer call the Presentation preview simply
+  "unchanged" while CS-H is open.
+
+**Done when**
+- nothing outside this milestone's own record names kiox (`git grep -i
+  kiox`), and the leak gate and the offline bootstrap pass without the two
+  modules
+- the docs check is green in Baseline CI
+- this file, the status file and `epic.yaml` agree
+
 ## After CS3 (outside this repository)
 
-1. Cut `baseline-v1` with `tag.yml` from the merged `main`.
+1. Cut `baseline-v1` with `tag.yml` from the merged `main` — done: `baseline-v1`
+   is [#4](https://github.com/sourceplane/cms-sanity/pull/4)'s merge.
 2. Register the row in orun-cloud's `infra/baselines-registry/baselines.yaml`
    (unlisted) with the card vendored at the tag.
 3. Bootstrap one blog from the tag against a workspace; record its timings;

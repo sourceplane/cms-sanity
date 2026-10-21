@@ -2,7 +2,7 @@
 
 **Places** everything a blog built from this baseline is made of, as ONE
 pull request: the root manifests (`intent.yaml`, `package.json`, the pnpm
-workspace and lockfile, `turbo.json`, the kiox pin), `.github/workflows`
+workspace and lockfile, `turbo.json`), `.github/workflows`
 (`ci.yml` and `checks.yml` — the baseline's own `baseline.yml` and
 `tag.yml` are ignored), the shared TypeScript/ESLint config and the wrangler
 renderer, the blog's README and its two context pages, the identity file

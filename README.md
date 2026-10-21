@@ -2,7 +2,8 @@
 
 Vercel's [Blog with Sanity CMS](https://github.com/vercel/next.js/tree/canary/examples/cms-sanity)
 — posts, authors and settings in a Sanity dataset read over GROQ with
-`next-sanity`, draft mode with live preview through the Presentation tool,
+`next-sanity`, draft mode with live preview through the Presentation tool
+(unchanged in code; not yet exercised in a browser — risk CS-H),
 Sanity TypeGen, AI Assist and Unsplash presets, and the Sanity Studio
 embedded at `/studio` — running on **Cloudflare Workers + Static Assets**
 through [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare), and
@@ -130,7 +131,7 @@ pnpm preview                      # wrangler dev over the built Worker
 | Project env vars in the dashboard | Build time: project id and dataset from optional Orun secrets, inlined by `next build`. Run time: the read token as a Worker secret |
 | A missing env var fails every route | An unconnected blog: sample posts, a notice, a connect page — deployable before a Sanity project exists |
 | Time-based ISR (`revalidate: 60`) | Sanity's API CDN, same 60 s TTL; nothing is pre-rendered or revalidated in the Worker |
-| Draft mode / Presentation live preview | Unchanged (`/api/draft-mode/enable`, cookies, `VisualEditing`) |
+| Draft mode / Presentation live preview | Unchanged in code (`/api/draft-mode/enable`, cookies, `VisualEditing`); not yet exercised in a browser against a Sanity project — risk CS-H |
 | The Studio rendered on the server | Loaded client-side only; megabytes of static chunks, a small Worker |
 | Vercel Speed Insights | Cloudflare Web Analytics beacon (`app/(blog)/analytics.tsx`) |
 | Deploy on push | Orun deploys `<repo>-web-{stage,prod}` on merge to `main` and smoke-tests it (`apps/web/component.yaml`) |

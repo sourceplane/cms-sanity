@@ -7,6 +7,6 @@ folder is the adoption; the merge creates the epic in the workspace.
 
 | Epic | Cluster | Status | What it is |
 |------|---------|--------|------------|
-| [`cms-sanity/`](./cms-sanity/) | **CS** | 🟡 In progress | Vercel's Sanity CMS blog, equivalent in code and function, running on Cloudflare Workers + Static Assets via OpenNext — and an Orun baseline that instantiates it in one landing, deployable before a Sanity project exists (CS3) |
+| [`cms-sanity/`](./cms-sanity/) | **CS** | ✅ Shipped (`baseline-v1`); live bootstrap pending | Vercel's Sanity CMS blog, equivalent in code and function, running on Cloudflare Workers + Static Assets via OpenNext — and an Orun baseline that instantiates it in one landing, deployable before a Sanity project exists (CS3) |
 
 As-built ≠ intent: what shipped lives in each epic's `IMPLEMENTATION-STATUS.md`.
