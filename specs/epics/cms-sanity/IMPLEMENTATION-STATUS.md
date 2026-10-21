@@ -9,7 +9,7 @@ the code departed from `design.md` or from the upstream template.
 | CS1 — the blog on Workers | ✅ Shipped | [#2](https://github.com/sourceplane/cms-sanity/pull/2) |
 | CS2 — ready to instantiate | ✅ Shipped | [#3](https://github.com/sourceplane/cms-sanity/pull/3) |
 | CS3 — a baseline | ✅ Shipped | [#4](https://github.com/sourceplane/cms-sanity/pull/4) (CS-4), tagged `baseline-v1` |
-| CS4 — the cirrus standard | ✅ Shipped | CS-5 — on `main` after `baseline-v1`, not yet tagged |
+| CS4 — the cirrus standard | ✅ Shipped | [#5](https://github.com/sourceplane/cms-sanity/pull/5) (CS-5), [#6](https://github.com/sourceplane/cms-sanity/pull/6) (CS-6), tagged `baseline-v2` |
 
 ## Departures from the upstream template
 
@@ -157,6 +157,45 @@ Nothing about the blog changed. What changed is the baseline around it:
 | context pack | `operations.md`, `deployment.md` | plus `current.md`, `decisions.md`, `open-risks.md` | cirrus-baseline's shape; the three new pages are this repository's own and no module places them (the leak gate still allows exactly two) |
 | the Presentation preview in the READMEs and `design.md` | "Unchanged" (the root README's opening line and mapping table) | unchanged in code, not yet exercised in a browser (risk CS-H); the blog's README asks its owner to open the Presentation tool once after adding the token | CS-H is open: the draft-mode route is tested with a mocked client only |
 | status | CS3 "in review … to be tagged `baseline-v1`" | CS3 shipped and tagged `baseline-v1` | the tag existed; the documents had not caught up |
+
+### The subdomain from the Cloudflare connection (CS-6)
+
+The card's `subdomain` input was typed by hand, though it belongs to the
+Cloudflare account the same way its id does and has exactly one right
+answer; a wrong value surfaced only after deploy, in the deploy's smoke and
+`01-product`'s probes. It now declares `from:
+connection.cloudflare.workersSubdomain`, as cirrus-baseline's card does since
+baseline-v23: the Cloudflare integration reads the subdomain at connect and on
+its hourly health check, the bootstrap door fills the input from the
+connection the build is bound to (the one `CLOUDFLARE_ACCOUNT_ID` and the
+deploy token come from), the console renders no field for it, and an account
+with no workers.dev subdomain is refused at the door. Nothing a blog runs
+changes.
+
+- `blueprint.yaml`: the `from:` source and the reason, at the input; key,
+  label, pattern, help and example unchanged.
+- `testing/manifest.test.sh`: cirrus-baseline's rule, byte for byte — the
+  source is accepted, and a `connection.<provider>.…` source whose provider
+  `spec.requires.integrations` does not list fails (the card lists
+  `cloudflare`).
+- `repo-blueprint.yaml`, `BOOTSTRAP.md`, `docs/phases/README.md`: a console or
+  `--from bst_…` build reads it from the connection; only a hand-run build
+  passes `--set subdomain`. The default is unchanged.
+
+Verified:
+
+- `testing/{manifest,phases,coverage,rebrand,retouch,bootstrap-defer}.test.sh`
+  green; `gen-component-docs.py --check` green (2 components).
+- Mutation: `cloudflare` removed from `spec.requires.integrations` →
+  `manifest.test.sh` fails with exactly one finding, `inputs[subdomain].from
+  is 'connection.cloudflare.workersSubdomain' but spec.requires.integrations
+  does not list cloudflare`; restored, green.
+- `orun new --status` (v2.58.11) reads the blueprint: `01-product` pending
+  (97 files). `testing/leak.test.sh` (v2.58.11): 97 files derived, every one
+  read, no factory path named.
+- `testing/placement.test.sh` (v2.78.4): 97 files placed, both landings,
+  `--resume` changes nothing.
+- `orun task check CS-6` complete.
 
 ## Verified (CS4)
 
