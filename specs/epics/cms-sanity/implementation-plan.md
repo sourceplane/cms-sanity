@@ -72,6 +72,12 @@ blog itself changing.
 - **Status that agrees with the tags.** CS3 is shipped and tagged
   `baseline-v1`; the READMEs no longer call the Presentation preview simply
   "unchanged" while CS-H is open.
+- **The subdomain from the Cloudflare connection (CS-6).** The card's
+  `subdomain` input declares `from: connection.cloudflare.workersSubdomain`,
+  as cirrus-baseline's does since baseline-v23: the bootstrap door fills it
+  from the connection the build is bound to, so the console asks for nothing
+  a typo could get wrong. `testing/manifest.test.sh` takes cirrus-baseline's
+  rule, which requires the provider in `spec.requires.integrations`.
 
 **Done when**
 - nothing outside this milestone's own record names kiox (`git grep -i
