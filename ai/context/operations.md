@@ -145,7 +145,7 @@ orun integrations list --org <ws> --json && orun cloud check --org <ws>
 | change the content model | the schemas in `apps/web/sanity/schemas`, then `pnpm --filter @app/web typegen` and commit `schema.json` and `sanity.types.ts` with them |
 | deploy a change | merge to `main`; watch the run; failed lanes → `gh run rerun --failed` |
 | redeploy without a change | edit the last line of `apps/web/component.yaml` (`# orun: redeploy <reason> <stamp>`) and merge — it is a deploy trigger, nothing reads it |
-| serve a custom domain | attach it to the Worker in Cloudflare (README, "Custom domain"), and add it to the Sanity project's CORS origins |
+| serve a custom domain | attach it to the Worker in Cloudflare (README, "Custom domain"), add it to the Sanity project's CORS origins, then replace the placeholder `cms-sanity.example.com` in `intent.yaml`'s `BASE_DOMAIN` (dev, stage and prod) with it |
 | headless credentials | `ORUN_TOKEN` (workspace-scoped) + `GITHUB_TOKEN` |
 
 The deployment record is the bootstrap's `02-docs` phase. Re-running it (the

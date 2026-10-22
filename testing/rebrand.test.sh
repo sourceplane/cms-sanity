@@ -92,6 +92,14 @@ check "an environment URL in the intent" \
 check "the placeholder domain is the product's domain, not a renamed slug" \
   "$acme" intent.yaml '      BASE_DOMAIN: cms-sanity.example.com' \
   '      BASE_DOMAIN: acme.dev'
+check "no domain given: the reserved placeholder, for an owner to replace later" \
+  '{"reponame":"acme-notes","productname":"Acme Notes","githuborg":"acme-inc","subdomain":"acme"}' \
+  intent.yaml '      BASE_DOMAIN: cms-sanity.example.com' \
+  '      BASE_DOMAIN: acme-notes.example.com'
+check "an empty domain is no domain" \
+  '{"reponame":"acme-notes","productname":"Acme Notes","productdomain":""}' \
+  intent.yaml '      BASE_DOMAIN: cms-sanity.example.com' \
+  '      BASE_DOMAIN: acme-notes.example.com'
 check "the repo slug" \
   "$acme" package.json '  "name": "cms-sanity",' \
   '  "name": "acme-notes",'
@@ -142,6 +150,12 @@ check "…and its Worker name" \
 check "…and its secret ref" \
   "$suffixed" apps/web/component.yaml '    X: "secret://cms-sanity/cms-sanity/{{ .environment }}/SANITY_DATASET"' \
   '    X: "secret://ws_79BDXAZQ/acme-cms-sanity/{{ .environment }}/SANITY_DATASET"' 3
+# The placement fixture carries no domain (a console build asks for none), and
+# its slug's placeholder CONTAINS the baseline's: acme-cms-sanity.example.com.
+nodomain='{"reponame":"acme-cms-sanity","productname":"Acme","productdomain":"","githuborg":"acme-inc","subdomain":"acme","orunWorkspace":"ws_79BDXAZQ"}'
+check "…and, with no domain, its placeholder survives three passes" \
+  "$nodomain" intent.yaml '      BASE_DOMAIN: cms-sanity.example.com' \
+  '      BASE_DOMAIN: acme-cms-sanity.example.com' 3
 
 # --verify runs in every phase. Without the product's values it cannot tell
 # the product's own identity from a leftover; with them it can. A real
@@ -165,6 +179,8 @@ verify "without them it cannot know, and fails" \
   "$contains" package.json '"name": "cms-sanity-2"' fail
 verify "given the values, a slug ending in the baseline's passes" \
   "$suffixed" apps/web/wrangler.jsonc '"name": "acme-cms-sanity-web"' pass --values
+verify "given the values, a placeholder domain containing the baseline's passes" \
+  "$nodomain" intent.yaml 'BASE_DOMAIN: acme-cms-sanity.example.com' pass --values
 verify "the upstream template's link is not residue" \
   "$acme" apps/web/app/layout.tsx 'href="https://github.com/vercel/next.js/tree/canary/examples/cms-sanity"' pass --values
 verify "given the values, a real leftover still fails" \
