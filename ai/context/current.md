@@ -21,8 +21,8 @@ component; Sanity stays the owner's SaaS.
 
 | | |
 |---|---|
-| Latest tag | `baseline-v2` (CS4 — the cirrus standard: no kiox, generated component docs, this context pack, and the workers.dev subdomain read from the Cloudflare connection instead of asked) |
-| Before it | `baseline-v1` (CS3 — the baseline, one landing) |
+| Latest tag | `baseline-v3` (CS5 — the domain is set later: the console asks for no domain, and a blog is born with the placeholder `<reponame>.example.com` for an owner to replace) |
+| Before it | `baseline-v2` (CS4 — the cirrus standard: no kiox, generated component docs, this context pack, and the workers.dev subdomain read from the Cloudflare connection instead of asked); `baseline-v1` (CS3 — the baseline, one landing) |
 | Proven live | No. Everything short of the platform is proven offline in Baseline CI, unconnected; a live bootstrap (risk CS-M) and a connected blog reading a real dataset, its Presentation preview included (risk CS-H), are still to come |
 
 ## Where to read
@@ -37,7 +37,7 @@ component; Sanity stays the owner's SaaS.
 
 ## Next
 
-1. Bootstrap one blog from `baseline-v2` against a workspace, and record its
+1. Bootstrap one blog from `baseline-v3` against a workspace, and record its
    timings (closes CS-M).
 2. Connect a Sanity project to it, see the samples give way, and open the
    Presentation tool once to confirm the preview loads (closes CS-H).

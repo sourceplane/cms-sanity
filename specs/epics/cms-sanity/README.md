@@ -8,15 +8,15 @@ The upstream code stays the code: the GROQ queries, the schemas, the Portable Te
 
 | Field | Value |
 |-------|-------|
-| Status | ✅ CS0–CS4 shipped (#1–#6), CS3 tagged `baseline-v1`; CS4 (the cirrus standard, CS-5, and the subdomain read from the Cloudflare connection, CS-6) tagged `baseline-v2`. Not yet proven by a live bootstrap (risk CS-M) |
-| Cluster | **CS** (CS0–CS4) |
+| Status | ✅ CS0–CS5 shipped (#1–#7), CS3 tagged `baseline-v1`; CS4 (the cirrus standard, CS-5, and the subdomain read from the Cloudflare connection, CS-6) tagged `baseline-v2`; CS5 (the domain is set later, CS-7) tagged `baseline-v3`. Not yet proven by a live bootstrap (risk CS-M) |
+| Cluster | **CS** (CS0–CS5) |
 | Owner(s) | `apps/web` (the blog and the Studio) · `tests/web` (image URLs, the date component, the draft-mode route, the unconnected blog) · the baseline (`blueprint.yaml`, `repo-blueprint.yaml`, `.baseline/`, `testing/`) |
 | Builds on | `cirrus-baseline` conventions; the `portfolio-starter-kit` port's build shape (static-assets incremental cache + `populateCache`) and its analytics beacon; the `turso-starter` port's `force-dynamic` answer to a read-only cache |
 | Upstream | [vercel/next.js `examples/cms-sanity`](https://github.com/vercel/next.js/tree/canary/examples/cms-sanity) at `a871df1` (2026-10-14) |
 | Changes | Adds the Workers build, the monorepo wrapper, tests and the deploy contract; makes the blog routes dynamic; mounts the Studio client-side; swaps Speed Insights for one Cloudflare beacon; moves next-sanity/sanity to their Next 16 lines and Tailwind to 4 |
 | Decisions locked | (1) OpenNext on Workers + Static Assets, the static-assets incremental cache. (2) Blog routes `force-dynamic` + `fetchCache = "force-no-store"`; Sanity's API CDN is the cache; no R2/DO cache. (3) The Studio loads through `next/dynamic` with `ssr: false`; the Studio layout's metadata is written out, not re-exported. (4) Project id and dataset are build-time values the Orun build reads from the product's secrets — best-effort since CS3 (`optionalSecretEnv`): with none, the blog renders bundled sample posts under a "connect your Sanity project" notice; the read token is an optional Worker secret. (5) Tailwind 4, CSS-first. (6) CS3: two phases, one landing (cirrus-baseline v22). |
 | Gate | CS1 is the first user-visible rung. |
-| Shipped as | `baseline-v1` ([#4](https://github.com/sourceplane/cms-sanity/pull/4)), then `baseline-v2` (CS4: [#5](https://github.com/sourceplane/cms-sanity/pull/5), [#6](https://github.com/sourceplane/cms-sanity/pull/6)); proven offline (Baseline CI, with no Sanity project), deploy gated until a workspace is linked |
+| Shipped as | `baseline-v1` ([#4](https://github.com/sourceplane/cms-sanity/pull/4)), then `baseline-v2` (CS4: [#5](https://github.com/sourceplane/cms-sanity/pull/5), [#6](https://github.com/sourceplane/cms-sanity/pull/6)), then `baseline-v3` (CS5: [#7](https://github.com/sourceplane/cms-sanity/pull/7), no domain asked); proven offline (Baseline CI, with no Sanity project), deploy gated until a workspace is linked |
 
 ## Read order
 
@@ -34,3 +34,4 @@ The upstream code stays the code: the GROQ queries, the schemas, the Portable Te
 | CS2 — ready to instantiate | README, as-built status | a reader can run, test, preview and deploy it against their own Sanity project |
 | CS3 — a baseline | card, build document, rename, bootstrap tooling, tests; the unconnected blog | a new blog goes from nothing to live in one landing with no Sanity project; Baseline CI green |
 | CS4 — the cirrus standard | no kiox, generated component docs, the context pack, status that agrees with the tags; the subdomain read from the Cloudflare connection | Baseline CI green with the docs check; the card asks for no subdomain |
+| CS5 — the domain is set later | the console asks for no domain; an empty `productdomain` brands the placeholder `<reponame>.example.com` for an owner to replace | Baseline CI green on a fixture with no domain |

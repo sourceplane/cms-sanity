@@ -141,5 +141,10 @@ The blog answers on workers.dev from its first deploy. To serve it on your
 own domain, add the domain to the Cloudflare account the blog deploys into
 and attach it to the Worker (dashboard → Workers & Pages →
 `cms-sanity-web-prod` → Settings → Domains & Routes → Add → Custom domain),
-then add it to the Sanity project's CORS origins. Nothing in the repository
-changes: the blog renders no absolute link to itself.
+then add it to the Sanity project's CORS origins. The blog renders no
+absolute link to itself (its share-image base URL is the Settings
+document's Open Graph `metadataBase`, set in the Studio), so nothing else
+has to change; the repository names the domain in one place, `BASE_DOMAIN`
+in `intent.yaml` (dev, stage and prod), which the blog was born with as the
+reserved placeholder `cms-sanity.example.com`. Replace it with your domain
+in the same change that records it.

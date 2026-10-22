@@ -10,6 +10,7 @@ the code departed from `design.md` or from the upstream template.
 | CS2 — ready to instantiate | ✅ Shipped | [#3](https://github.com/sourceplane/cms-sanity/pull/3) |
 | CS3 — a baseline | ✅ Shipped | [#4](https://github.com/sourceplane/cms-sanity/pull/4) (CS-4), tagged `baseline-v1` |
 | CS4 — the cirrus standard | ✅ Shipped | [#5](https://github.com/sourceplane/cms-sanity/pull/5) (CS-5), [#6](https://github.com/sourceplane/cms-sanity/pull/6) (CS-6), tagged `baseline-v2` |
+| CS5 — the domain is set later | ✅ Shipped | [#7](https://github.com/sourceplane/cms-sanity/pull/7) (CS-7), tagged `baseline-v3` |
 
 ## Departures from the upstream template
 
@@ -196,6 +197,56 @@ Verified:
 - `testing/placement.test.sh` (v2.78.4): 97 files placed, both landings,
   `--resume` changes nothing.
 - `orun task check CS-6` complete.
+
+## The domain is set later (CS5, CS-7)
+
+The console asked for the blog's domain, with help text that said it did not
+need to exist — and nothing in the build needed one: the blog answers on
+workers.dev from its first deploy, it renders no absolute link to itself
+(its share-image base URL is the Sanity Settings document's `metadataBase`),
+and the one place the repository names the domain is `BASE_DOMAIN` in
+`intent.yaml`, for dev, stage and prod. A domain is an owner's step after the
+bootstrap (README, "Custom domain"), so the form no longer asks for it.
+
+- `blueprint.yaml` declares no `productdomain` input; the console's Product
+  step asks for the blog's name alone.
+- `repo-blueprint.yaml`'s `productdomain` is optional, default empty. A
+  hand-run build may still pass `--set productdomain=` for a blog that
+  already has its domain. Nothing else in the build reads it: no hook, probe
+  or `when:` names it, only the `.rebrand/values.json` template, which
+  writes `""`.
+- `rebrand.mjs` no longer requires it. Empty, it brands the reserved
+  placeholder `<reponame>.example.com` (RFC 2606 — never someone else's
+  domain) where the domain goes, so setting it later is replacing one
+  string; the product README and `ai/context/operations.md` say so.
+- `testing/fixtures/acme.json` carries no domain, so the leak gate and the
+  offline bootstrap exercise exactly what a console build supplies. Its slug
+  ends in the baseline's, so its placeholder, `acme-cms-sanity.example.com`,
+  CONTAINS the baseline's own `cms-sanity.example.com`: the engine holds it
+  like any value it wrote, and `testing/rebrand.test.sh` pins that (three
+  passes, and `--verify` with the values) beside the absent and the empty
+  domain. `baseline.yml`'s blueprint read sets no domain.
+
+Nothing that needs a domain was removed — it waits for one.
+
+Verified:
+
+- `testing/{manifest,phases,coverage,rebrand,retouch,bootstrap-defer}.test.sh`
+  green (`rebrand.test.sh`: 39 checks, four of them new — and those four
+  fail against the old `rebrand.mjs`); `gen-component-docs.py --check`
+  green (2 components).
+- `orun new --status` (v2.58.11) with no `productdomain`: `01-product`
+  pending (97 files). `testing/leak.test.sh` (v2.58.11): 97 files derived,
+  every one read, no factory path named.
+- `testing/placement.test.sh` (v2.78.4): 97 files placed, both landings,
+  branded with no residue, the blog's own `orun plan` green, `--resume`
+  changes nothing.
+- The offline bootstrap's blog, kept and read: `.rebrand/values.json` has
+  `"productdomain": ""`; `intent.yaml`'s `BASE_DOMAIN` is
+  `acme-cms-sanity.example.com` in all three environments, and the README
+  and `ai/context/operations.md` name that same string (5 lines, 3 files);
+  `rebrand --verify` finds no leftover.
+- `orun task check CS-7` complete.
 
 ## Verified (CS4)
 
