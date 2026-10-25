@@ -1,7 +1,7 @@
 # cms-sanity — operating contract (for humans and agents)
 
 This is the standing guide to how this blog is deployed and operated.
-Instance facts (live URLs, workspace, secrets inventory) live in
+Instance facts (live URLs, workspace, the secrets it uses) live in
 [deployment.md](deployment.md), rendered from probed reality by the
 bootstrap's `02-docs` phase; this file is the contract that stays true
 between deployments. It is written to give an agent with repository read
@@ -19,7 +19,9 @@ Cloudflare, expressed as an Orun component-native desired-state repo.
   and ships as static assets; `/api/draft-mode/enable` turns on draft mode
   for the Studio's live preview.
 - **`tests/web`** — vitest over the Sanity helpers, the draft-mode route and
-  the unconnected blog, verified on the `dev` rung.
+  the unconnected blog. No lane lints or runs the tests: a pull request
+  builds and dry-deploys the blog, so run `pnpm typecheck && pnpm lint &&
+  pnpm test` before you push.
 - **`tooling/*`** — shared TypeScript and ESLint configuration, and the
   wrangler renderer for a deployable that comes to take wiring.
 
@@ -27,7 +29,7 @@ There is no infrastructure component: Sanity is a hosted service the blog
 reads over HTTPS, not something this repository provisions.
 
 Environments: **`stage`** and **`prod`** are deployed; **`dev` is
-verify-only by design** — lanes build and test, nothing deploys.
+verify-only by design** — lanes build and dry-deploy, nothing deploys.
 
 ## Sanity: connected, or sample posts
 

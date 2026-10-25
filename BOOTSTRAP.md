@@ -12,21 +12,26 @@ not separate workflows. The console card the platform renders is
 brokered secrets and the programme, and `testing/manifest.test.sh` holds it
 to what the build document does.
 
-Target wall-clock: **about fourteen minutes** — an estimate summed from the
-phases until a bootstrap measures it: ONE landing that places the whole blog
-(its pull request waits on a full Next.js build in Checks) and one
-convergence that builds and deploys it to stage and prod side by side, then
-the record. It is cirrus-baseline's one-landing shape (baseline-v22): no
-scaffold landing of its own, no second landing for the app.
+Target wall-clock: **about twelve minutes** — an estimate summed from the
+phases (11 + 1) until a bootstrap on this shape measures it. The shape: the
+task set-up in the background while ONE landing places the whole blog,
+brands it and checks it in the box (`orun validate` and `orun plan`, no
+runner waited for — its pull request no longer waits on a full Next.js build
+in Checks), then one convergence that builds and deploys it to stage and
+prod side by side, then a short docs landing that records it. It is
+cirrus-baseline's one-landing shape (baseline-v22): no scaffold landing of
+its own, no second landing for the app.
 
 ## 0. What you need
 
 - GitHub org access (repository creation) and a machine with `git`, `node`
   (≥ 22), `pnpm` (10.12.1), `python3` with PyYAML, `curl`, and the `orun`
-  CLI **≥ v2.58.11** — the floor for RUNNING the bootstrap (the phase overlay,
-  landings that commit per phase and wait on the PR's whole CI run,
-  `githubOwner` on the doctor probe, a probe deferred for a project not yet
-  created, and `from: workspace`). The blog's own `ci.yml` pins its lanes
+  CLI **≥ v2.88.0** — the floor for RUNNING the bootstrap (the phase overlay,
+  landings that commit per phase, `githubOwner` on the doctor probe, a probe
+  deferred for a project not yet created, `from: workspace`, the deploy
+  credentials minted in one `secrets` reconcile, the task set-up run in the
+  background (`background: true`), and landings checked in the box before
+  they merge (`checks: local`)). The blog's own `ci.yml` pins its lanes
   separately (v2.78.4).
 - A Cloudflare account (the free plan is enough for one Worker with Static
   Assets) and its **Account API token** with Workers Scripts Write (the
@@ -83,8 +88,8 @@ phase whose files are present but branded derives as `drifted`, and
 
 | phase | what it lands | verified by |
 |---|---|---|
-| `01-product` | the repository, created and linked; the WHOLE blog in one PR — intent, CI, tooling, identity, `apps/web` + `tests/web`; the brokered Cloudflare secrets | its PR's checks, then the convergence green (build, deploy, smoke) and the blog answering on both workers.dev URLs |
-| `02-docs` | `ai/context/deployment.md` from probed facts; prod's promotion gate and dev's push lanes restored | the final probe |
+| `01-product` | the repository, created and linked; the WHOLE blog in one PR — intent, CI, tooling, identity, `apps/web` + `tests/web`; the brokered Cloudflare secrets | its commit validated and planned in the box (as the PR and as the merge), then merged; the convergence green (build, deploy, smoke) and the blog answering on both workers.dev URLs |
+| `02-docs` | `ai/context/deployment.md` from probed facts; prod's promotion gate and dev's push lanes restored | the render's own probes, recorded; the commit checked in the box and merged |
 
 ```bash
 orun new --blueprint repo-blueprint.yaml --out ~/blogs/acme-notes --run-hooks \
@@ -181,18 +186,23 @@ each runs locally the same way:
 ```bash
 for t in manifest phases coverage rebrand retouch bootstrap-defer; do bash testing/$t.test.sh; done
 bash testing/leak.test.sh        # needs orun
-bash testing/placement.test.sh   # needs orun ≥ ci.yml's pin, node, pnpm: the offline bootstrap
-bash testing/e2e.test.sh         # + network for pnpm: the blog built, dry-deployed and served, no Sanity project
+bash testing/placement.test.sh   # needs orun ≥ the floor (and so ≥ ci.yml's pin), node, pnpm: the offline bootstrap
+bash testing/e2e.test.sh         # + network for pnpm: each landing type-checked, linted, tested and built; the blog dry-deployed and served, no Sanity project
 ```
 
 The offline bootstrap (`testing/lib/bootstrap.sh`) places both phases in
 order and finishes each with the blueprint's OWN `run:` hooks — read out of
 `repo-blueprint.yaml`, not transcribed — so the retouch marker, the rebrand,
-the re-tenant, the work-tree strip, the deferrals and their restore, the
-lockfile and the deployment record all run exactly as a real bootstrap runs
-them. Only the platform's typed actions (task, repo, link, reconcile, land,
-watch, probe) are stood in for, a landing becoming a commit on top of
-orun's `Initial commit`.
+the re-tenant, the work-tree strip, the deferrals and their restore and the
+deployment record all run exactly as a real bootstrap runs them. Only the
+platform's typed actions (task, repo, link, reconcile, land, watch, probe)
+are stood in for, a landing becoming a commit on top of orun's `Initial
+commit`.
+
+The bootstrap's landings check their commit in the box (`orun validate` and
+`orun plan`) and the blog's pull requests build and dry-deploy it; neither
+lints or runs the tests. The e2e tier is where those run, on each landing,
+before a tag is cut.
 
 ## 5. Cutting a baseline tag (maintainers)
 
@@ -223,10 +233,12 @@ at the tag and refuses the whole catalogue if it 404s.
 | The live blog says "Sample content" | expected until a Sanity project is connected (§3). Not a failure |
 | Connected, but `/` answers 500 | the project id or dataset is wrong, or the dataset is private without a token. Check `orun secrets list --env <env>` and the project in Sanity's console; fix the secret and redeploy |
 | The Studio says it cannot sign in / CORS | the Worker URL is not in the Sanity project's CORS origins with credentials allowed |
+| `land` stops: `the landing's own check failed — orun plan for …` | the blog's tree does not plan — the line after it is orun's own error (an unknown component type, a composition that does not resolve). Nothing was pushed. Fix the tree (or the baseline) and re-run the phase |
+| `land` waits on CI after all | the blog's repository requires a status check on `main` (branch protection or a ruleset), so GitHub refused the early merge; the landing waits for the check as a `checks: ci` landing would, then merges |
 | Convergence failed AFTER the PR merged; re-running lands nothing | expected on its own — the files are on main. Re-run the phase (`--phase 01-product`, `--redo 01-product`, or the console's Retry): its `retouch` hook gives the landing a diff and the blog redeploys |
 | The blog's `intent.yaml` says `workspace: ws_SET_ME` | `orunWorkspace` was empty and the build ran outside a workspace; set it and re-run `01-product` |
 | A bootstrap stopped before `02-docs`; prod no longer waits on stage | the gate is deferred, not dropped: run `02-docs`, or `node tooling/bootstrap/promotion.mjs --restore --file <blog>/intent.yaml` |
 | `✕ input "productname" is required` | all three required inputs (`reponame`, `productname`, `githuborg`) must be set on every invocation, single-phase ones included |
-| `unknown flag: --phase` or a parse error in the blueprint | the CLI is below the v2.58.11 floor |
+| `unknown flag: --phase`, `has no parameter "checks"`, `has no parameter "secrets"` or another parse error in the blueprint | the CLI is below the v2.88.0 floor |
 | the convergence reported green, then `verify` got 404 from both URLs | a second workflow ran on the push to main and the watch took its run. Only `ci.yml` runs on a push to main (`testing/coverage.test.sh` holds it); read the CI run on main for the real result |
 | the convergence planned no lanes at all | the merge's push had no `before` to diff against (a first push straight onto an unborn `main`). The landing merges a pull request into orun's `Initial commit`, so its push has one; re-run the phase and its retouch marker re-plans the blog |
