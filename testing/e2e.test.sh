@@ -6,12 +6,16 @@
 # This proves it WORKS, by doing to it what its own pipelines will — on the
 # day it is built, when its owner has not connected a Sanity project yet:
 #
-#   1. at the 01-product landing (the commit its one pull request merges), run
-#      what `checks.yml` runs on that PR — install with the placed lockfile,
+#   1. at the 01-product landing (the commit its one pull request merges), the
+#      landing's own checks — install with the lockfile the product ships,
 #      render fixtures and check the committed config is the render,
-#      typecheck, lint, test, build. That landing WAITS on its checks, so a
-#      product they refuse is a bootstrap that never lands; then the same at
-#      the 02-docs landing, which waits on them too;
+#      typecheck, lint, test, build. The bootstrap's landings are checked in
+#      the box with `orun validate` and `orun plan` alone (`checks: local`;
+#      their PR's CI on an `orun/BASE-…` branch is `plan` alone), and a
+#      product's later pull requests build and dry-deploy it through ci.yml's
+#      lanes, so THIS is where a product those steps refuse is caught: before
+#      the tag, not after a build has merged it. Then the same at the 02-docs
+#      landing, the finished blog;
 #   2. the stage lane's own steps, read out of `orun plan` in the product for
 #      a pull request (the verify profile: the deploy profile has no dry run)
 #      — EVERY `run:` step of the job, in order, exactly as planned: the
@@ -80,24 +84,27 @@ export CI=1 WRANGLER_SEND_METRICS=false NEXT_TELEMETRY_DISABLED=1 TURBO_TELEMETR
 unset NEXT_PUBLIC_SANITY_PROJECT_ID NEXT_PUBLIC_SANITY_DATASET SANITY_API_READ_TOKEN SANITY_AUTH_TOKEN
 free_port() { python3 -c "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1]);s.close()"; }
 
-# What checks.yml runs, step for step, read out of the workflow the product
-# carries so the two cannot drift: every `run:` of its one job, in order.
+# The landing's own checks, step for step, run here at once on the whole
+# tree. A pull request in the product builds and dry-deploys the blog
+# through ci.yml's lanes; the lint and the tests run here, and by hand before
+# a push.
+LANDING_CHECKS=(
+  "pnpm install --frozen-lockfile"
+  "pnpm run wire:fixture"
+  "git diff --exit-code"
+  "pnpm typecheck"
+  "pnpm lint"
+  "pnpm test"
+  "pnpm build"
+)
 checks() { # DIR LOG
   local dir="$1" log="$2" cmd
-  while IFS= read -r cmd; do
+  for cmd in "${LANDING_CHECKS[@]}"; do
     echo "   \$ $cmd" | tee -a "$log"
     if ! (cd "$dir" && bash -c "$cmd") >> "$log" 2>&1; then
       echo "FAIL: \`$cmd\` failed in $dir" >&2; tail -40 "$log" >&2; return 1
     fi
-  done < <(python3 - "$dir/.github/workflows/checks.yml" <<'PY'
-import sys, yaml
-wf = yaml.safe_load(open(sys.argv[1]))
-for job in wf["jobs"].values():
-    for step in job["steps"]:
-        if "run" in step:
-            print(step["run"].strip())
-PY
-)
+  done
 }
 
 echo "── the offline bootstrap (testing/lib/bootstrap.sh)"
@@ -107,17 +114,17 @@ bootstrap_offline "$root" "$tree" "$values" "$scratch/logs" > "$scratch/bootstra
 s00="$(git -C "$tree" rev-parse HEAD~2)"; s01="$(git -C "$tree" rev-parse HEAD~1)"
 echo "   2 phases placed and landed on orun's Initial commit"
 
-# ── 1. the checks each landing waits on ────────────────────────────────────
-echo "── 01-product's landing, under the checks its PR waits on"
+# ── 1. each landing's own checks ───────────────────────────────────────────
+echo "── 01-product's landing: install, the fixture render, typecheck, lint, test, build"
 git -C "$tree" worktree add -q "$scratch/at-01" "$s01"
 checks "$scratch/at-01" "$scratch/checks-01.log"
 # Its tree is not needed again, and the disk is shared.
 git -C "$tree" worktree remove --force "$scratch/at-01"
 
-echo "── 02-docs's landing (the finished blog), under the same checks"
+echo "── 02-docs's landing (the finished blog): the same checks"
 checks "$tree" "$scratch/checks-blog.log"
 grep -q '(Turbopack)' "$scratch/checks-blog.log" \
-  || { echo "FAIL: the Checks build did not run on Turbopack" >&2; exit 1; }
+  || { echo "FAIL: the landing's build did not run on Turbopack" >&2; exit 1; }
 
 # ── 2. the stage lane, as a pull request plans it ──────────────────────────
 echo "── the stage lane: every run step the PR plan gives web@stage, in a staged job tree"

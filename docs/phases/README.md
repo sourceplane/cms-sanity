@@ -9,9 +9,13 @@ container the same operation as running them all.
 
 Each phase follows the same contract:
 
-> **place its modules → brand them → land them as one pull request → watch
-> the convergence that merge triggers (auto-resumed) → verify the outcome
-> over HTTP.**
+> **place its modules → brand them → check them in the box and land them as
+> one pull request → watch the convergence that merge triggers
+> (auto-resumed) → verify the outcome over HTTP.**
+
+The run's task set-up — the epic, a milestone per phase, a task per landing
+— runs in the background from the start; the first hook that needs it, the
+phase's `task`, waits for it.
 
 Run from the baseline checkout (the blueprint's source is `path: .`); the
 blog's repository is wherever `--out` points.
@@ -38,12 +42,17 @@ states it in the document: the engine refuses a phase whose predecessor is not
 placed, and names it.
 
 Every landing is a pull request on a branch named for its task
-(`orun/BASE-<n>-<phase>`). On those branches `ci.yml` runs `plan` only — the
-intent, every component and every composition resolve — and skips the lanes,
-because the merge runs them on main a minute later, for real, and that
-convergence is what the phase watches. `checks.yml` (install, typecheck, lint,
-test, build) runs on every pull request regardless, and the landing waits for
-it.
+(`orun/BASE-<n>-<phase>`), checked before it is pushed: `orun validate`, then
+`orun plan` as the pull request and as the merge would plan it, in the box,
+in under a second (`checks: local`). Then it merges; nothing waits for the
+PR's CI. On those branches `ci.yml` runs `plan` only — the intent, every
+component and every composition resolve — and skips the lanes, because the
+merge runs them on main a minute later, for real, and that convergence is
+what the phase watches. The blog carries no other workflow: the baseline's
+own CI (Tier 2) installs, renders the fixture, type-checks, lints, tests and
+builds each landing before a tag is cut. A blog's later pull requests run
+`ci.yml`'s verify lanes, which build and dry-deploy it and do not lint or
+run the tests.
 
 | phase | lands | verified by |
 |---|---|---|
@@ -115,9 +124,12 @@ lands, its `post` hooks make them the blog's:
    deferrals → `git add` → `rebrand --verify` — the identity rename over the
    whole tree, the re-tenant, and a sweep that fails on any of this
    baseline's identity left behind.
-4. `pnpm install --lockfile-only` — the baseline's complete lockfile is
-   already placed, so this confirms it.
-5. `repo`, `link`, the two brokered credentials, `land`.
+4. `repo`, `link`, the brokered credentials in one `secrets` reconcile,
+   `task` (the first hook that waits for the background task set-up), and
+   `land`, its commit checked in the box (`checks: local`).
+
+There is no lockfile step: the baseline's complete lockfile is placed as it
+is, and the lanes install it with `--frozen-lockfile`.
 
 ## When a phase fails
 

@@ -1,5 +1,7 @@
 # web-tests
 
+The blog's vitest suite (the unconnected blog's sample posts and project configuration, the draft-mode route, image URLs, the date component and the blog's name), run with pnpm test
+
 The test suite for **web**. It deploys nothing: its lane installs, builds and runs the tests.
 
 |              |                      |

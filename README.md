@@ -94,8 +94,10 @@ pnpm build            # typegen + next build + opennextjs-cloudflare build → a
 pnpm --filter @app/web preview   # wrangler dev over the built Worker: the sample posts, unconnected
 ```
 
-That much needs no Sanity project (`Checks` runs exactly this). To see your
-own content:
+That much needs no Sanity project: the baseline's own e2e tier
+(`testing/e2e.test.sh`) runs exactly this on each landing before a tag, and
+a blog's developers run it before a push — a blog's pull request builds and
+dry-deploys it, and does not lint or run the tests. To see your own content:
 
 ```bash
 cd apps/web
@@ -141,7 +143,6 @@ pnpm preview                      # wrangler dev over the built Worker
 
 | Workflow | What it runs | Ships to a blog |
 |---|---|---|
-| `checks.yml` | install, wire fixtures (and that the committed config is their render), typecheck, lint, test, build — every PR (not pushes: on main, `ci.yml` must be the only run a commit has, because the bootstrap's convergence watch takes the newest one) | yes |
-| `ci.yml` | the Orun pipeline: `orun plan --changed`, then one job per lane; deploys stage → prod on merge. It plans nothing while `intent.yaml` names the placeholder workspace `ws_CHANGE_ME`, as this repository does | yes |
-| `baseline.yml` | the baseline's own tiers: contract tests, the blueprint read by the pinned orun, the leak gate, the offline bootstrap, the blog built, dry-deployed and served with no Sanity project | no |
+| `ci.yml` | the Orun pipeline, and the only workflow a blog carries: `orun plan --changed`, then one job per lane. A pull request runs the verify lanes (the blog built and dry-deployed per environment; they do not lint or run the tests), except the bootstrap's own landings (`orun/BASE-*`), where `plan` alone is the check; a merge deploys stage → prod. It plans nothing while `intent.yaml` names the placeholder workspace `ws_CHANGE_ME`, as this repository does | yes |
+| `baseline.yml` | the baseline's own tiers: contract tests and the component docs' drift check, the blueprint read by the pinned orun, the leak gate, the offline bootstrap, each landing installed, its fixture rendered, type-checked, linted, tested and built, then the blog built in a staged job tree, dry-deployed and served with no Sanity project | no |
 | `tag.yml` | cuts a `baseline-vN` tag (manual) | no |

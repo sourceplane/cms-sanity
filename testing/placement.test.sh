@@ -12,8 +12,8 @@
 #   2. THE OFFLINE BOOTSTRAP (testing/lib/bootstrap.sh) — both phases placed in
 #      order, finished by the blueprint's OWN `run:` hooks (retouch, rebrand,
 #      re-tenant, work-tree strip, the deferrals and their restore, the
-#      lockfile, the deployment record), each landing a commit on top of
-#      orun's `Initial commit`;
+#      deployment record), each landing a commit on top of orun's `Initial
+#      commit`;
 #   3. the product it ends with: branded with no residue, carrying nothing of
 #      the factory and naming none of its paths, re-tenanted, its gates
 #      restored, its record rendered;
@@ -30,9 +30,8 @@
 # testing/e2e.test.sh goes on from here: it installs, builds and serves the
 # product and runs its smoke against it.
 #
-# Needs: orun, node, pnpm, python3 (+PyYAML), git. No credential. The pnpm
-# lockfile check and the deployment-record probes reach the network if they
-# can, and pass without it.
+# Needs: orun, node, pnpm, python3 (+PyYAML), git. No credential. The
+# deployment-record probes reach the network if they can, and pass without it.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 root="$(cd "$here/.." && pwd)"
@@ -43,7 +42,9 @@ for bin in orun node pnpm python3 git; do
   command -v "$bin" >/dev/null || { echo "placement.test.sh needs $bin on PATH" >&2; exit 1; }
 done
 # Step 4 is the PRODUCT's own plan, so it must be planned by the orun the
-# product's CI runs (ci.yml's pin) or newer, not by the bootstrap floor.
+# product's CI runs (ci.yml's pin) or newer. The bootstrap's floor (v2.88.0)
+# is newer than the pin, and is what baseline.yml runs this under: steps 1
+# and 2 read the blueprint, which an orun below the floor refuses.
 pin="$(sed -n 's/^ *version: *v\([0-9.]*\) *$/\1/p' "$root/.github/workflows/ci.yml" | head -1)"
 have="$(orun --version | sed -n 's/.*version \([0-9.]*\).*/\1/p')"
 python3 -c "import sys; v=lambda s: tuple(map(int, s.split('.'))); sys.exit(0 if v(sys.argv[1]) >= v(sys.argv[2]) else 1)" "$have" "$pin" \

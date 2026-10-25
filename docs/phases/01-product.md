@@ -3,8 +3,8 @@
 **Places** everything a blog built from this baseline is made of, as ONE
 pull request: the root manifests (`intent.yaml`, `package.json`, the pnpm
 workspace and lockfile, `turbo.json`), `.github/workflows`
-(`ci.yml` and `checks.yml` — the baseline's own `baseline.yml` and
-`tag.yml` are ignored), the shared TypeScript/ESLint config and the wrangler
+(`ci.yml` — the baseline's own `baseline.yml` and `tag.yml` are
+ignored), the shared TypeScript/ESLint config and the wrangler
 renderer, the blog's README and its two context pages, the identity file
 `.rebrand/values.json`, `.gitkeep` files for the four discovery roots, and
 `apps/web` (the Next.js app, its Studio and its deploy contract) with
@@ -19,9 +19,12 @@ deploys and serves with no Sanity project behind it.
 
 ## What runs
 
+The run's task set-up — the epic, both milestones, both tasks — runs in the
+background from the start (`background: true`), so every hook up to `task`
+runs beside it; `task` is the first that waits for it.
+
 | hook | what it does |
 |---|---|
-| `task` (pre) | finds the phase's task (opened by the run-level list) and yields its key |
 | `retouch` | the redeploy marker on `apps/web/component.yaml` and `tests/web/component.yaml` (`.baseline/tasks/01-product.TaskContract.yaml`'s `affects`) |
 | `git-init`, `git-stage` | the rebrand enumerates with `git ls-files`, so the tree is a staged repo first |
 | `rebrand` | renames the baseline's identity to the blog's (`tooling/rebrand/rebrand.mjs`): the repo slug, the Worker name, the secret project, the `SITE_NAME` seam, the domain, the subdomain — and leaves the upstream template's `examples/cms-sanity` links alone |
@@ -30,13 +33,12 @@ deploys and serves with no Sanity project behind it.
 | `promotion` | defers prod's wait on stage until `02-docs` (both environments deploy side by side) |
 | `dev-lanes` | keeps dev's verify lanes off main's convergences until `02-docs` |
 | `git-restage`, `rebrand-verify` | refuses the landing if any baseline identity is left |
-| `pnpm-lockfile` | confirms the placed lockfile (`--lockfile-only`) |
 | `repo` | `orun.repo/ensure@v1` — creates `githuborg/reponame` (private unless `repoPrivate=false`) |
 | `link` | `orun cloud link` (best effort) then `orun cloud check` — an unlinked repo stops here |
-| `secret-workers-deploy` | `orun.integrations/reconcile@v1` — ensures `CLOUDFLARE_API_TOKEN`, brokered from the Cloudflare connection with the `workers-deploy` scope |
-| `secret-account-id` | ensures `CLOUDFLARE_ACCOUNT_ID`, the connection fact |
-| `land` | one PR, waited for (Checks + `plan`) and merged |
-| `converge` (await) | `orun.run/watch@v1` on the merge commit's run; resumes it up to three times |
+| `secrets` | `orun.integrations/reconcile@v1`, both keys in one hook, created side by side: `CLOUDFLARE_API_TOKEN`, brokered from the Cloudflare connection with the `workers-deploy` scope; `CLOUDFLARE_ACCOUNT_ID`, the connection fact |
+| `task` | finds the phase's task (opened by the run-level list) and yields its key — waiting, if it must, for the background set-up |
+| `land` | one PR bound to the task, its commit checked in the box first (`checks: local`: `orun validate`, then `orun plan` as the PR and as the merge would plan it, under a second); merged without waiting for the PR's CI |
+| `converge` (await) | `orun.run/watch@v1` on the merge commit's run, read every 5 s; resumes it up to three times |
 | `verify` (await) | `orun.http/probe@v1` on both workers.dev URLs |
 
 There is no `orun.secrets/exists@v1` await: the blog has no infra component,
@@ -71,6 +73,14 @@ verifies on dev only). Each lane:
 
 Stage and prod deploy side by side (the promotion gate is deferred).
 
+`web-tests` has a lane on dev alone, so the merge plans nothing for it. The
+landing's own pull request runs `plan` alone, and nothing waits for it — the
+same plan ran in
+the box before the push: the baseline's own CI installed, type-checked,
+linted, tested and built this exact tree before the tag was cut. A blog's
+later pull requests build and dry-deploy it and do not lint or run the
+tests; its developers run them before a push.
+
 ## Verified
 
 The convergence run for the merge commit is green, and
@@ -83,6 +93,7 @@ The convergence run for the merge commit is green, and
 | parks on `waiting for github for <org>` | the workspace's GitHub connection is to another account. Connect the App installation on `<org>` (console → Integrations → GitHub), then `--resume` |
 | parks on the `providers` probe for cloudflare | Cloudflare is not connected to the workspace. Connect it (console → Integrations → Cloudflare, paste the Account API token) |
 | `link` fails: `… is not linked to workspace` | the credential cannot write links and the platform has not linked the repo. Allow-list it (console → Settings → Git repos) and re-run the phase |
+| `land`: `the landing's own check failed — orun plan for …` | the placed tree does not plan; the next line is orun's error. Nothing was pushed. Fix it and re-run the phase |
 | `rebrand-verify` lists leftovers | a file carries an identity form no rule renames. Add a rule to `tooling/rebrand/rebrand.mjs` (and a case to `testing/rebrand.test.sh`) |
 | `intent.yaml` says `workspace: ws_SET_ME` | `orunWorkspace` was empty and the build ran outside a workspace. Set it and re-run |
 | deploy lane: `secret resolution failed … CLOUDFLARE_API_TOKEN` | the reconcile did not run or minted against a revoked connection. Re-connect and re-run the phase; the reconcile re-mints only what is missing |
